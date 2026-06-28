@@ -1,0 +1,14 @@
+https://docs.sarvam.ai/api-reference-docs/api-guides-tutorials/speech-to-text/overview
+https://docs.sarvam.ai/api-reference-docs/api-guides-tutorials/speech-to-text/which-api-to-use
+https://docs.sarvam.ai/api-reference-docs/api-guides-tutorials/speech-to-text/rest-api
+https://docs.sarvam.ai/api-reference-docs/api-guides-tutorials/speech-to-text/streaming-api
+
+
+
+https://docs.sarvam.ai/api-reference-docs/api-guides-tutorials/text-to-speech/overview
+https://docs.sarvam.ai/api-reference-docs/api-guides-tutorials/text-to-speech/which-api-to-use
+https://docs.sarvam.ai/api-reference-docs/api-guides-tutorials/text-to-speech/rest-api
+https://docs.sarvam.ai/api-reference-docs/api-guides-tutorials/text-to-speech/streaming-api/http-stream
+https://docs.sarvam.ai/api-reference-docs/api-guides-tutorials/text-to-speech/streaming-api/web-socket
+
+https://docs.sarvam.ai/api-reference-docs/getting-started/sd-ks-libraries
