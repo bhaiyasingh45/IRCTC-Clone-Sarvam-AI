@@ -161,7 +161,28 @@ export const TOOL_DEFINITIONS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'say',
+      description: 'Speak a response without taking any booking action. Use for: greetings ("hello", "namaste", "kya haal hai"), acknowledgments, unclear input, general questions, or anything not handled by other tools. NEVER call search_trains or select_train for greetings or chitchat — use say instead.',
+      parameters: {
+        type: 'object',
+        properties: {
+          text: {
+            type: 'string',
+            description: 'Hindi or Hinglish text to speak aloud to the user. Max 2 sentences. Be helpful and friendly.',
+          },
+        },
+        required: ['text'],
+      },
+    },
+  },
 ];
+
+// Exported separately so the follow-up LLM call can use only this tool,
+// forcing the model to always produce spoken text (never null).
+export const SAY_TOOL = TOOL_DEFINITIONS[TOOL_DEFINITIONS.length - 1];
 
 const SCROLL_AMOUNTS = { small: 200, medium: 400, large: 800 };
 
@@ -279,6 +300,11 @@ export function executeToolCall(toolName, toolArgs, currentState) {
     case 'select_class': {
       actions.push({ type: 'SELECT_CLASS', classCode: toolArgs.travel_class });
       return { actions, toolResult: { class: toolArgs.travel_class } };
+    }
+
+    case 'say': {
+      // No state changes — text is spoken directly by useVoiceFlow
+      return { actions: [], toolResult: { said: toolArgs.text || '' } };
     }
 
     default:

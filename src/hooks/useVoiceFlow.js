@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from 'react';
 import useSarvamSTT from './useSarvamSTT.js';
 import useSarvamTTS from './useSarvamTTS.js';
 import useSarvamLLM from './useSarvamLLM.js';
-import { TOOL_DEFINITIONS, executeToolCall } from '../utils/toolExecutor.js';
+import { TOOL_DEFINITIONS, SAY_TOOL, executeToolCall } from '../utils/toolExecutor.js';
 import { log } from '../utils/sessionLogger.js';
 
 const MAX_HISTORY = 10;
@@ -28,6 +28,9 @@ TODAY'S DATE: ${today} (use this automatically — do NOT ask user for date if t
 DEFAULT CLASS: SL/Sleeper (use this automatically — do NOT ask user for class if they did not mention one)
 
 == MANDATORY TOOL RULES ==
+• User says greeting (hello, namaste, kya haal hai, kya chal raha hai, shukriya, theek hai) → call say("Namaste! Aap kahan jaana chahte hain?")
+• Unclear or off-topic input → call say with a helpful clarifying question in Hindi.
+• NEVER call search_trains, select_train, or any booking tool for greetings or chitchat.
 • User mentions two cities / "X se Y" / "X to Y" → call search_trains RIGHT NOW. No confirmation, no talking first.
 • User says a train number or "pehli/doosri/teesri train" → call select_train.
 • User says "book karo" / "ticket chahiye" → call initiate_booking.
@@ -35,7 +38,7 @@ DEFAULT CLASS: SL/Sleeper (use this automatically — do NOT ask user for class 
 • User says "date badlo" / "kal ke liye" / "parso" → call change_search_params.
 • User says "haan" / "confirm" on review screen → call confirm_booking.
 • User says "nahi" / "cancel" on review screen → call cancel_booking.
-• User says "band karo" / "stop" / "rok do" → respond: "Theek hai, band ho raha hoon."
+• User says "band karo" / "stop" / "rok do" → call say("Theek hai, band ho raha hoon. Shubh yatra!")
 
 == CITY NAME MAPPING (pass raw user text to search_trains — system normalizes automatically) ==
 दिल्ली = Delhi = Dilli = New Delhi | मुंबई = Mumbai = Bambai | लखनऊ = Lucknow
@@ -141,52 +144,69 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
         tool_called: response.tool_calls?.[0]?.function?.name,
       });
 
+      let spokenText = '';
+
       if (response.tool_calls?.length > 0) {
         const toolCall = response.tool_calls[0];
         const toolName = toolCall.function.name;
         const toolArgs = JSON.parse(toolCall.function.arguments || '{}');
 
         log('tool_call', { tool: toolName, args: toolArgs, screen: currentState.screen });
-        pushStep(`tool_${toolName}`);
 
-        const { actions, toolResult } = executeToolCall(toolName, toolArgs, stateRef.current);
-        for (const action of actions) dispatch(action);
+        // `say` tool: conversational response, no navigation — speak directly, skip follow-up
+        if (toolName === 'say') {
+          spokenText = toolArgs.text || '';
+          log('tool_result', { tool: 'say', result: { said: spokenText } });
+        } else {
+          pushStep(`tool_${toolName}`);
 
-        log('tool_result', { tool: toolName, result: toolResult });
-        pushStep('responding');
+          const { actions, toolResult } = executeToolCall(toolName, toolArgs, stateRef.current);
+          for (const action of actions) dispatch(action);
 
-        const followUpMessages = [
-          ...messages,
-          response.rawMessage,
-          { role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(toolResult) },
-        ];
-        response = await llm.complete(followUpMessages, TOOL_DEFINITIONS, 'none');
-        if (myGen !== processGenRef.current) return;
+          log('tool_result', { tool: toolName, result: toolResult });
+          pushStep('responding');
 
-        log('llm_response', { phase: 'follow_up', response_text: response.content });
+          // Follow-up: send ONLY the say tool with tool_choice:'required'
+          // This guarantees the model calls say(text) — response.content is often null otherwise
+          const followUpMessages = [
+            ...messages,
+            response.rawMessage,
+            { role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(toolResult) },
+          ];
+          const followUp = await llm.complete(followUpMessages, [SAY_TOOL], 'required');
+          if (myGen !== processGenRef.current) return;
+
+          const sayCall = followUp.tool_calls?.[0];
+          if (sayCall?.function?.name === 'say') {
+            spokenText = JSON.parse(sayCall.function.arguments || '{}').text || '';
+          } else {
+            spokenText = followUp.content || ''; // fallback if model returns text directly
+          }
+          log('llm_response', { phase: 'follow_up', spoken_text: spokenText });
+        }
       } else {
+        // No tool call — model returned text directly (shouldn't happen with tool_choice:'required', but handle it)
         pushStep('responding');
+        spokenText = response.content || '';
       }
-
-      const assistantText = response.content || '';
 
       historyRef.current = [
         ...historyRef.current.slice(-(MAX_HISTORY - 2)),
         userMessage,
-        { role: 'assistant', content: assistantText },
+        { role: 'assistant', content: spokenText },
       ];
 
       clearThinking();
       dispatch({
         type: 'SET_VOICE_STATE',
-        voiceState: { isProcessing: false, lastAssistantText: assistantText, isSpeaking: !!assistantText },
+        voiceState: { isProcessing: false, lastAssistantText: spokenText, isSpeaking: !!spokenText },
       });
 
-      if (assistantText) {
+      if (spokenText) {
         setVoiceStatus('bot_speaking');
-        log('tts', { text: assistantText, speaker: 'priya', model: 'bulbul:v3' });
-        await tts.speak(assistantText);
-        if (myGen !== processGenRef.current) return; // interrupted during TTS
+        log('tts', { text: spokenText, speaker: 'priya', model: 'bulbul:v3' });
+        await tts.speak(spokenText);
+        if (myGen !== processGenRef.current) return;
       }
 
       dispatch({ type: 'SET_VOICE_STATE', voiceState: { isSpeaking: false } });
