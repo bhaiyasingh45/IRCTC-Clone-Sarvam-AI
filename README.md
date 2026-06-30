@@ -1,3 +1,7 @@
+
+
+https://github.com/user-attachments/assets/dc206611-5a0d-4a25-8fe9-c3bbf24c87be
+
 # IRCTC Voice Booking — Powered by Sarvam AI
 
 A voice-first Indian Railway ticket booking demo built with React and Sarvam AI. Book trains by speaking in Hindi or Hinglish — no typing required.
