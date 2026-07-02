@@ -82,6 +82,55 @@ export const TRAINS = [
     classes: { SL: { fare: 455, availability: 'WL 6', seats: 0 }, '3A': { fare: 1210, availability: 'AVAILABLE', seats: 14 } },
   },
 
+  {
+    train_number: '12559', train_name: 'Shivganga Express',
+    source: 'BUI', destination: 'NDLS', departure: '20:00', arrival: '08:45', duration: '12h 45m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'BUI',  arrival: null,    departure: '20:00', day: 1 },
+      { station: 'PRYJ', arrival: '23:10', departure: '23:20', day: 1 },
+      { station: 'LKO',  arrival: '03:05', departure: '03:15', day: 2 },
+      { station: 'NDLS', arrival: '08:45', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 465, availability: 'AVAILABLE', seats: 58 }, '3A': { fare: 1240, availability: 'AVAILABLE', seats: 24 }, '2A': { fare: 1855, availability: 'AVAILABLE', seats: 10 }, '1A': { fare: 3110, availability: 'AVAILABLE', seats: 4 } },
+  },
+  {
+    train_number: '12560', train_name: 'Shivganga Express',
+    source: 'NDLS', destination: 'BUI', departure: '19:00', arrival: '07:30', duration: '12h 30m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'NDLS', arrival: null,    departure: '19:00', day: 1 },
+      { station: 'LKO',  arrival: '00:40', departure: '00:50', day: 2 },
+      { station: 'PRYJ', arrival: '04:10', departure: '04:20', day: 2 },
+      { station: 'BUI',  arrival: '07:30', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 465, availability: 'AVAILABLE', seats: 52 }, '3A': { fare: 1240, availability: 'RAC 4', seats: 0 }, '2A': { fare: 1855, availability: 'AVAILABLE', seats: 8 }, '1A': { fare: 3110, availability: 'AVAILABLE', seats: 2 } },
+  },
+  {
+    train_number: '13005', train_name: 'Amritsar Mail',
+    source: 'BUI', destination: 'NDLS', departure: '17:45', arrival: '06:55', duration: '13h 10m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'BUI',  arrival: null,    departure: '17:45', day: 1 },
+      { station: 'PRYJ', arrival: '21:00', departure: '21:15', day: 1 },
+      { station: 'LKO',  arrival: '00:40', departure: '00:55', day: 2 },
+      { station: 'NDLS', arrival: '06:55', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 480, availability: 'AVAILABLE', seats: 46 }, '3A': { fare: 1280, availability: 'AVAILABLE', seats: 20 }, '2A': { fare: 1910, availability: 'WL 3', seats: 0 } },
+  },
+  {
+    train_number: '13006', train_name: 'Amritsar Mail',
+    source: 'NDLS', destination: 'BUI', departure: '17:25', arrival: '06:15', duration: '12h 50m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'NDLS', arrival: null,    departure: '17:25', day: 1 },
+      { station: 'LKO',  arrival: '23:55', departure: '00:10', day: 2 },
+      { station: 'PRYJ', arrival: '03:25', departure: '03:35', day: 2 },
+      { station: 'BUI',  arrival: '06:15', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 480, availability: 'AVAILABLE', seats: 40 }, '3A': { fare: 1280, availability: 'AVAILABLE', seats: 16 }, '2A': { fare: 1910, availability: 'AVAILABLE', seats: 6 } },
+  },
+
   // ── NDLS ↔ LKO ────────────────────────────────────────────────────────────
   {
     train_number: '12583', train_name: 'Lucknow Superfast Express',
@@ -164,6 +213,47 @@ export const TRAINS = [
     classes: { SL: { fare: 280, availability: 'AVAILABLE', seats: 64 }, '3A': { fare: 745, availability: 'RAC 4', seats: 0 } },
   },
 
+  {
+    train_number: '20501', train_name: 'Vande Bharat Express',
+    source: 'NDLS', destination: 'LKO', departure: '06:00', arrival: '12:25', duration: '6h 25m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'NDLS', arrival: null,    departure: '06:00', day: 1 },
+      { station: 'LKO',  arrival: '12:25', departure: null,    day: 1 },
+    ],
+    classes: { '3A': { fare: 1455, availability: 'AVAILABLE', seats: 18 }, '2A': { fare: 2035, availability: 'AVAILABLE', seats: 8 }, '1A': { fare: 3310, availability: 'AVAILABLE', seats: 4 } },
+  },
+  {
+    train_number: '20502', train_name: 'Vande Bharat Express',
+    source: 'LKO', destination: 'NDLS', departure: '15:00', arrival: '21:20', duration: '6h 20m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'LKO',  arrival: null,    departure: '15:00', day: 1 },
+      { station: 'NDLS', arrival: '21:20', departure: null,    day: 1 },
+    ],
+    classes: { '3A': { fare: 1455, availability: 'AVAILABLE', seats: 14 }, '2A': { fare: 2035, availability: 'WL 2', seats: 0 }, '1A': { fare: 3310, availability: 'AVAILABLE', seats: 3 } },
+  },
+  {
+    train_number: '14003', train_name: 'Mahanagari Express',
+    source: 'NDLS', destination: 'LKO', departure: '13:30', arrival: '22:10', duration: '8h 40m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'NDLS', arrival: null,    departure: '13:30', day: 1 },
+      { station: 'LKO',  arrival: '22:10', departure: null,    day: 1 },
+    ],
+    classes: { SL: { fare: 265, availability: 'AVAILABLE', seats: 80 }, '3A': { fare: 705, availability: 'AVAILABLE', seats: 34 }, '2A': { fare: 1025, availability: 'AVAILABLE', seats: 14 } },
+  },
+  {
+    train_number: '14004', train_name: 'Mahanagari Express',
+    source: 'LKO', destination: 'NDLS', departure: '05:30', arrival: '14:20', duration: '8h 50m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'LKO',  arrival: null,    departure: '05:30', day: 1 },
+      { station: 'NDLS', arrival: '14:20', departure: null,    day: 1 },
+    ],
+    classes: { SL: { fare: 265, availability: 'AVAILABLE', seats: 68 }, '3A': { fare: 705, availability: 'RAC 6', seats: 0 }, '2A': { fare: 1025, availability: 'AVAILABLE', seats: 10 } },
+  },
+
   // ── NDLS ↔ PRYJ ───────────────────────────────────────────────────────────
   {
     train_number: '12275', train_name: 'Allahabad Duronto Express',
@@ -224,6 +314,49 @@ export const TRAINS = [
       { station: 'NDLS', arrival: '20:15', departure: null,    day: 1 },
     ],
     classes: { '3A': { fare: 1150, availability: 'AVAILABLE', seats: 20 }, '2A': { fare: 1680, availability: 'AVAILABLE', seats: 8 }, '1A': { fare: 2750, availability: 'RAC 1', seats: 0 } },
+  },
+
+  {
+    train_number: '20503', train_name: 'Vande Bharat Express',
+    source: 'NDLS', destination: 'PRYJ', departure: '06:00', arrival: '14:00', duration: '8h 00m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'NDLS', arrival: null,    departure: '06:00', day: 1 },
+      { station: 'PRYJ', arrival: '14:00', departure: null,    day: 1 },
+    ],
+    classes: { '3A': { fare: 1245, availability: 'AVAILABLE', seats: 20 }, '2A': { fare: 1740, availability: 'AVAILABLE', seats: 8 }, '1A': { fare: 2840, availability: 'AVAILABLE', seats: 4 } },
+  },
+  {
+    train_number: '20504', train_name: 'Vande Bharat Express',
+    source: 'PRYJ', destination: 'NDLS', departure: '15:30', arrival: '23:30', duration: '8h 00m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'PRYJ', arrival: null,    departure: '15:30', day: 1 },
+      { station: 'NDLS', arrival: '23:30', departure: null,    day: 1 },
+    ],
+    classes: { '3A': { fare: 1245, availability: 'AVAILABLE', seats: 16 }, '2A': { fare: 1740, availability: 'WL 1', seats: 0 }, '1A': { fare: 2840, availability: 'AVAILABLE', seats: 3 } },
+  },
+  {
+    train_number: '12107', train_name: 'Lucknow-Prayagraj SF Express',
+    source: 'NDLS', destination: 'PRYJ', departure: '14:45', arrival: '23:55', duration: '9h 10m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'NDLS', arrival: null,    departure: '14:45', day: 1 },
+      { station: 'LKO',  arrival: '21:10', departure: '21:20', day: 1 },
+      { station: 'PRYJ', arrival: '23:55', departure: null,    day: 1 },
+    ],
+    classes: { SL: { fare: 380, availability: 'AVAILABLE', seats: 54 }, '3A': { fare: 1010, availability: 'AVAILABLE', seats: 22 }, '2A': { fare: 1465, availability: 'AVAILABLE', seats: 10 } },
+  },
+  {
+    train_number: '12108', train_name: 'Prayagraj-Lucknow SF Express',
+    source: 'PRYJ', destination: 'NDLS', departure: '07:45', arrival: '16:55', duration: '9h 10m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'PRYJ', arrival: null,    departure: '07:45', day: 1 },
+      { station: 'LKO',  arrival: '10:30', departure: '10:40', day: 1 },
+      { station: 'NDLS', arrival: '16:55', departure: null,    day: 1 },
+    ],
+    classes: { SL: { fare: 380, availability: 'AVAILABLE', seats: 44 }, '3A': { fare: 1010, availability: 'RAC 5', seats: 0 }, '2A': { fare: 1465, availability: 'AVAILABLE', seats: 8 } },
   },
 
   // ── NDLS ↔ CSMT ───────────────────────────────────────────────────────────
@@ -288,6 +421,47 @@ export const TRAINS = [
     classes: { SL: { fare: 620, availability: 'AVAILABLE', seats: 40 }, '3A': { fare: 1650, availability: 'AVAILABLE', seats: 16 }, '2A': { fare: 2380, availability: 'WL 4', seats: 0 } },
   },
 
+  {
+    train_number: '12919', train_name: 'Malwa Express',
+    source: 'NDLS', destination: 'CSMT', departure: '07:10', arrival: '04:30', duration: '21h 20m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'NDLS', arrival: null,    departure: '07:10', day: 1 },
+      { station: 'CSMT', arrival: '04:30', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 650, availability: 'AVAILABLE', seats: 50 }, '3A': { fare: 1730, availability: 'AVAILABLE', seats: 20 }, '2A': { fare: 2490, availability: 'AVAILABLE', seats: 8 } },
+  },
+  {
+    train_number: '12920', train_name: 'Malwa Express',
+    source: 'CSMT', destination: 'NDLS', departure: '14:50', arrival: '12:20', duration: '21h 30m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'CSMT', arrival: null,    departure: '14:50', day: 1 },
+      { station: 'NDLS', arrival: '12:20', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 650, availability: 'AVAILABLE', seats: 42 }, '3A': { fare: 1730, availability: 'RAC 8', seats: 0 }, '2A': { fare: 2490, availability: 'AVAILABLE', seats: 6 } },
+  },
+  {
+    train_number: '22221', train_name: 'Mumbai Rajdhani (via Kota)',
+    source: 'NDLS', destination: 'CSMT', departure: '16:00', arrival: '09:25', duration: '17h 25m',
+    running_days: ['Mon','Wed','Thu','Sat'],
+    stops: [
+      { station: 'NDLS', arrival: null,    departure: '16:00', day: 1 },
+      { station: 'CSMT', arrival: '09:25', departure: null,    day: 2 },
+    ],
+    classes: { '3A': { fare: 2545, availability: 'AVAILABLE', seats: 16 }, '2A': { fare: 3665, availability: 'AVAILABLE', seats: 6 }, '1A': { fare: 6090, availability: 'AVAILABLE', seats: 2 } },
+  },
+  {
+    train_number: '22222', train_name: 'New Delhi Rajdhani (via Kota)',
+    source: 'CSMT', destination: 'NDLS', departure: '17:35', arrival: '11:00', duration: '17h 25m',
+    running_days: ['Tue','Wed','Fri','Sun'],
+    stops: [
+      { station: 'CSMT', arrival: null,    departure: '17:35', day: 1 },
+      { station: 'NDLS', arrival: '11:00', departure: null,    day: 2 },
+    ],
+    classes: { '3A': { fare: 2545, availability: 'WL 5', seats: 0 }, '2A': { fare: 3665, availability: 'AVAILABLE', seats: 4 }, '1A': { fare: 6090, availability: 'AVAILABLE', seats: 2 } },
+  },
+
   // ── BUI ↔ LKO ─────────────────────────────────────────────────────────────
   {
     train_number: '14235', train_name: 'Varanasi-Lucknow Intercity',
@@ -334,6 +508,51 @@ export const TRAINS = [
     classes: { SL: { fare: 210, availability: 'AVAILABLE', seats: 58 }, '3A': { fare: 560, availability: 'AVAILABLE', seats: 18 } },
   },
 
+  {
+    train_number: '15203', train_name: 'Lucknow-Barauni Express',
+    source: 'BUI', destination: 'LKO', departure: '21:10', arrival: '03:20', duration: '6h 10m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'BUI',  arrival: null,    departure: '21:10', day: 1 },
+      { station: 'PRYJ', arrival: '23:45', departure: '23:55', day: 1 },
+      { station: 'LKO',  arrival: '03:20', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 220, availability: 'AVAILABLE', seats: 62 }, '3A': { fare: 585, availability: 'AVAILABLE', seats: 24 } },
+  },
+  {
+    train_number: '15204', train_name: 'Barauni-Lucknow Express',
+    source: 'LKO', destination: 'BUI', departure: '14:30', arrival: '21:10', duration: '6h 40m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'LKO',  arrival: null,    departure: '14:30', day: 1 },
+      { station: 'PRYJ', arrival: '17:10', departure: '17:20', day: 1 },
+      { station: 'BUI',  arrival: '21:10', departure: null,    day: 1 },
+    ],
+    classes: { SL: { fare: 220, availability: 'AVAILABLE', seats: 50 }, '3A': { fare: 585, availability: 'RAC 3', seats: 0 } },
+  },
+  {
+    train_number: '13151', train_name: 'Kolkata Express',
+    source: 'LKO', destination: 'BUI', departure: '09:00', arrival: '15:30', duration: '6h 30m',
+    running_days: ['Mon','Wed','Fri','Sat'],
+    stops: [
+      { station: 'LKO',  arrival: null,    departure: '09:00', day: 1 },
+      { station: 'PRYJ', arrival: '11:45', departure: '11:55', day: 1 },
+      { station: 'BUI',  arrival: '15:30', departure: null,    day: 1 },
+    ],
+    classes: { SL: { fare: 205, availability: 'AVAILABLE', seats: 58 }, '3A': { fare: 545, availability: 'AVAILABLE', seats: 22 } },
+  },
+  {
+    train_number: '13152', train_name: 'Kolkata Express',
+    source: 'BUI', destination: 'LKO', departure: '16:30', arrival: '23:05', duration: '6h 35m',
+    running_days: ['Tue','Thu','Sat','Sun'],
+    stops: [
+      { station: 'BUI',  arrival: null,    departure: '16:30', day: 1 },
+      { station: 'PRYJ', arrival: '19:15', departure: '19:25', day: 1 },
+      { station: 'LKO',  arrival: '23:05', departure: null,    day: 1 },
+    ],
+    classes: { SL: { fare: 205, availability: 'AVAILABLE', seats: 46 }, '3A': { fare: 545, availability: 'AVAILABLE', seats: 18 } },
+  },
+
   // ── BUI ↔ PRYJ ────────────────────────────────────────────────────────────
   {
     train_number: '55300', train_name: 'Ballia-Prayagraj Passenger',
@@ -374,6 +593,47 @@ export const TRAINS = [
       { station: 'BUI',  arrival: '08:45', departure: null,    day: 1 },
     ],
     classes: { SL: { fare: 135, availability: 'AVAILABLE', seats: 68 }, '3A': { fare: 360, availability: 'RAC 1', seats: 0 } },
+  },
+
+  {
+    train_number: '55302', train_name: 'Ganga-Yamuna Express',
+    source: 'BUI', destination: 'PRYJ', departure: '13:45', arrival: '17:00', duration: '3h 15m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'BUI',  arrival: null,    departure: '13:45', day: 1 },
+      { station: 'PRYJ', arrival: '17:00', departure: null,    day: 1 },
+    ],
+    classes: { SL: { fare: 130, availability: 'AVAILABLE', seats: 85 }, '3A': { fare: 345, availability: 'AVAILABLE', seats: 28 } },
+  },
+  {
+    train_number: '55303', train_name: 'Ganga-Yamuna Express',
+    source: 'PRYJ', destination: 'BUI', departure: '09:15', arrival: '12:30', duration: '3h 15m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'PRYJ', arrival: null,    departure: '09:15', day: 1 },
+      { station: 'BUI',  arrival: '12:30', departure: null,    day: 1 },
+    ],
+    classes: { SL: { fare: 130, availability: 'AVAILABLE', seats: 78 }, '3A': { fare: 345, availability: 'RAC 2', seats: 0 } },
+  },
+  {
+    train_number: '14853', train_name: 'Marudhar Express',
+    source: 'PRYJ', destination: 'BUI', departure: '22:40', arrival: '02:10', duration: '3h 30m',
+    running_days: ['Tue','Thu','Sat'],
+    stops: [
+      { station: 'PRYJ', arrival: null,    departure: '22:40', day: 1 },
+      { station: 'BUI',  arrival: '02:10', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 140, availability: 'AVAILABLE', seats: 70 }, '3A': { fare: 375, availability: 'AVAILABLE', seats: 24 } },
+  },
+  {
+    train_number: '14854', train_name: 'Marudhar Express',
+    source: 'BUI', destination: 'PRYJ', departure: '04:30', arrival: '07:55', duration: '3h 25m',
+    running_days: ['Mon','Wed','Fri'],
+    stops: [
+      { station: 'BUI',  arrival: null,    departure: '04:30', day: 1 },
+      { station: 'PRYJ', arrival: '07:55', departure: null,    day: 1 },
+    ],
+    classes: { SL: { fare: 140, availability: 'AVAILABLE', seats: 64 }, '3A': { fare: 375, availability: 'AVAILABLE', seats: 20 } },
   },
 
   // ── BUI ↔ CSMT ────────────────────────────────────────────────────────────
@@ -422,6 +682,51 @@ export const TRAINS = [
     classes: { SL: { fare: 625, availability: 'AVAILABLE', seats: 36 }, '3A': { fare: 1660, availability: 'RAC 5', seats: 0 }, '2A': { fare: 2400, availability: 'AVAILABLE', seats: 6 } },
   },
 
+  {
+    train_number: '12177', train_name: 'Chambal Express',
+    source: 'BUI', destination: 'CSMT', departure: '17:00', arrival: '23:45', duration: '30h 45m',
+    running_days: ['Wed','Sun'],
+    stops: [
+      { station: 'BUI',  arrival: null,    departure: '17:00', day: 1 },
+      { station: 'PRYJ', arrival: '21:05', departure: '21:20', day: 1 },
+      { station: 'CSMT', arrival: '23:45', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 600, availability: 'AVAILABLE', seats: 42 }, '3A': { fare: 1595, availability: 'AVAILABLE', seats: 18 }, '2A': { fare: 2300, availability: 'AVAILABLE', seats: 8 } },
+  },
+  {
+    train_number: '12178', train_name: 'Chambal Express',
+    source: 'CSMT', destination: 'BUI', departure: '04:15', arrival: '12:50', duration: '32h 35m',
+    running_days: ['Thu','Mon'],
+    stops: [
+      { station: 'CSMT', arrival: null,    departure: '04:15', day: 1 },
+      { station: 'PRYJ', arrival: '12:30', departure: '12:45', day: 2 },
+      { station: 'BUI',  arrival: '16:50', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 600, availability: 'AVAILABLE', seats: 36 }, '3A': { fare: 1595, availability: 'RAC 4', seats: 0 }, '2A': { fare: 2300, availability: 'AVAILABLE', seats: 5 } },
+  },
+  {
+    train_number: '12141', train_name: 'Patliputra Express',
+    source: 'CSMT', destination: 'BUI', departure: '11:00', arrival: '19:05', duration: '32h 05m',
+    running_days: ['Tue','Fri','Sat'],
+    stops: [
+      { station: 'CSMT', arrival: null,    departure: '11:00', day: 1 },
+      { station: 'PRYJ', arrival: '06:15', departure: '06:30', day: 2 },
+      { station: 'BUI',  arrival: '10:05', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 595, availability: 'AVAILABLE', seats: 48 }, '3A': { fare: 1580, availability: 'AVAILABLE', seats: 22 }, '2A': { fare: 2280, availability: 'WL 2', seats: 0 } },
+  },
+  {
+    train_number: '12142', train_name: 'Patliputra Express',
+    source: 'BUI', destination: 'CSMT', departure: '22:05', arrival: '06:00', duration: '31h 55m',
+    running_days: ['Mon','Thu','Sun'],
+    stops: [
+      { station: 'BUI',  arrival: null,    departure: '22:05', day: 1 },
+      { station: 'PRYJ', arrival: '02:10', departure: '02:25', day: 2 },
+      { station: 'CSMT', arrival: '06:00', departure: null,    day: 3 },
+    ],
+    classes: { SL: { fare: 595, availability: 'AVAILABLE', seats: 40 }, '3A': { fare: 1580, availability: 'AVAILABLE', seats: 16 }, '2A': { fare: 2280, availability: 'AVAILABLE', seats: 6 } },
+  },
+
   // ── LKO ↔ PRYJ ────────────────────────────────────────────────────────────
   {
     train_number: '12101', train_name: 'Lucknow-Prayagraj Express',
@@ -462,6 +767,47 @@ export const TRAINS = [
       { station: 'LKO',  arrival: '08:55', departure: null,    day: 1 },
     ],
     classes: { SL: { fare: 155, availability: 'AVAILABLE', seats: 62 }, '3A': { fare: 415, availability: 'RAC 3', seats: 0 } },
+  },
+
+  {
+    train_number: '12235', train_name: 'Prayagraj-Lucknow Intercity',
+    source: 'PRYJ', destination: 'LKO', departure: '05:00', arrival: '07:50', duration: '2h 50m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'PRYJ', arrival: null,    departure: '05:00', day: 1 },
+      { station: 'LKO',  arrival: '07:50', departure: null,    day: 1 },
+    ],
+    classes: { SL: { fare: 150, availability: 'AVAILABLE', seats: 76 }, '3A': { fare: 400, availability: 'AVAILABLE', seats: 30 } },
+  },
+  {
+    train_number: '12236', train_name: 'Lucknow-Prayagraj Intercity',
+    source: 'LKO', destination: 'PRYJ', departure: '18:00', arrival: '20:55', duration: '2h 55m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'LKO',  arrival: null,    departure: '18:00', day: 1 },
+      { station: 'PRYJ', arrival: '20:55', departure: null,    day: 1 },
+    ],
+    classes: { SL: { fare: 150, availability: 'AVAILABLE', seats: 68 }, '3A': { fare: 400, availability: 'RAC 1', seats: 0 } },
+  },
+  {
+    train_number: '15009', train_name: 'Ganga-Gomti Express',
+    source: 'LKO', destination: 'PRYJ', departure: '10:45', arrival: '13:35', duration: '2h 50m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'LKO',  arrival: null,    departure: '10:45', day: 1 },
+      { station: 'PRYJ', arrival: '13:35', departure: null,    day: 1 },
+    ],
+    classes: { SL: { fare: 160, availability: 'AVAILABLE', seats: 80 }, '3A': { fare: 425, availability: 'AVAILABLE', seats: 28 }, '2A': { fare: 618, availability: 'AVAILABLE', seats: 10 } },
+  },
+  {
+    train_number: '15010', train_name: 'Ganga-Gomti Express',
+    source: 'PRYJ', destination: 'LKO', departure: '15:00', arrival: '17:55', duration: '2h 55m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'PRYJ', arrival: null,    departure: '15:00', day: 1 },
+      { station: 'LKO',  arrival: '17:55', departure: null,    day: 1 },
+    ],
+    classes: { SL: { fare: 160, availability: 'AVAILABLE', seats: 65 }, '3A': { fare: 425, availability: 'AVAILABLE', seats: 24 }, '2A': { fare: 618, availability: 'WL 1', seats: 0 } },
   },
 
   // ── LKO ↔ CSMT ────────────────────────────────────────────────────────────
@@ -510,6 +856,51 @@ export const TRAINS = [
     classes: { SL: { fare: 560, availability: 'AVAILABLE', seats: 42 }, '3A': { fare: 1490, availability: 'RAC 4', seats: 0 }, '2A': { fare: 2140, availability: 'AVAILABLE', seats: 7 } },
   },
 
+  {
+    train_number: '12137', train_name: 'Punjab Mail',
+    source: 'CSMT', destination: 'LKO', departure: '19:05', arrival: '22:25', duration: '27h 20m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'CSMT', arrival: null,    departure: '19:05', day: 1 },
+      { station: 'PRYJ', arrival: '12:50', departure: '13:05', day: 2 },
+      { station: 'LKO',  arrival: '17:25', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 530, availability: 'AVAILABLE', seats: 46 }, '3A': { fare: 1415, availability: 'AVAILABLE', seats: 20 }, '2A': { fare: 2035, availability: 'AVAILABLE', seats: 8 } },
+  },
+  {
+    train_number: '12138', train_name: 'Punjab Mail',
+    source: 'LKO', destination: 'CSMT', departure: '08:45', arrival: '12:05', duration: '27h 20m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'LKO',  arrival: null,    departure: '08:45', day: 1 },
+      { station: 'PRYJ', arrival: '13:10', departure: '13:25', day: 1 },
+      { station: 'CSMT', arrival: '12:05', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 530, availability: 'AVAILABLE', seats: 38 }, '3A': { fare: 1415, availability: 'WL 7', seats: 0 }, '2A': { fare: 2035, availability: 'AVAILABLE', seats: 6 } },
+  },
+  {
+    train_number: '12321', train_name: 'Howrah-Mumbai Mail',
+    source: 'LKO', destination: 'CSMT', departure: '17:20', arrival: '23:10', duration: '29h 50m',
+    running_days: ['Mon','Wed','Fri','Sun'],
+    stops: [
+      { station: 'LKO',  arrival: null,    departure: '17:20', day: 1 },
+      { station: 'PRYJ', arrival: '21:40', departure: '21:55', day: 1 },
+      { station: 'CSMT', arrival: '23:10', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 550, availability: 'AVAILABLE', seats: 54 }, '3A': { fare: 1465, availability: 'AVAILABLE', seats: 24 }, '2A': { fare: 2110, availability: 'AVAILABLE', seats: 10 } },
+  },
+  {
+    train_number: '12322', train_name: 'Mumbai-Howrah Mail',
+    source: 'CSMT', destination: 'LKO', departure: '22:30', arrival: '04:20', duration: '29h 50m',
+    running_days: ['Tue','Thu','Sat','Sun'],
+    stops: [
+      { station: 'CSMT', arrival: null,    departure: '22:30', day: 1 },
+      { station: 'PRYJ', arrival: '00:45', departure: '01:00', day: 3 },
+      { station: 'LKO',  arrival: '04:20', departure: null,    day: 3 },
+    ],
+    classes: { SL: { fare: 550, availability: 'AVAILABLE', seats: 44 }, '3A': { fare: 1465, availability: 'RAC 3', seats: 0 }, '2A': { fare: 2110, availability: 'AVAILABLE', seats: 7 } },
+  },
+
   // ── PRYJ ↔ CSMT ───────────────────────────────────────────────────────────
   {
     train_number: '12801', train_name: 'Prayagraj-Mumbai Superfast',
@@ -550,6 +941,48 @@ export const TRAINS = [
       { station: 'CSMT', arrival: '13:05', departure: null,    day: 2 },
     ],
     classes: { SL: { fare: 505, availability: 'AVAILABLE', seats: 48 }, '3A': { fare: 1345, availability: 'RAC 7', seats: 0 }, '2A': { fare: 1950, availability: 'AVAILABLE', seats: 9 } },
+  },
+  {
+    train_number: '12169', train_name: 'Prayagraj-Mumbai Superfast',
+    source: 'PRYJ', destination: 'CSMT', departure: '09:20', arrival: '04:00', duration: '18h 40m',
+    running_days: ['Tue','Thu','Sat'],
+    stops: [
+      { station: 'PRYJ', arrival: null,    departure: '09:20', day: 1 },
+      { station: 'CSMT', arrival: '04:00', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 510, availability: 'AVAILABLE', seats: 56 }, '3A': { fare: 1360, availability: 'AVAILABLE', seats: 22 }, '2A': { fare: 1960, availability: 'AVAILABLE', seats: 10 } },
+  },
+  {
+    train_number: '12170', train_name: 'Mumbai-Prayagraj Superfast',
+    source: 'CSMT', destination: 'PRYJ', departure: '05:10', arrival: '23:50', duration: '18h 40m',
+    running_days: ['Mon','Wed','Fri'],
+    stops: [
+      { station: 'CSMT', arrival: null,    departure: '05:10', day: 1 },
+      { station: 'PRYJ', arrival: '23:50', departure: null,    day: 1 },
+    ],
+    classes: { SL: { fare: 510, availability: 'AVAILABLE', seats: 44 }, '3A': { fare: 1360, availability: 'AVAILABLE', seats: 18 }, '2A': { fare: 1960, availability: 'WL 5', seats: 0 } },
+  },
+  {
+    train_number: '12229', train_name: 'Lucknow Mail',
+    source: 'PRYJ', destination: 'CSMT', departure: '23:00', arrival: '17:00', duration: '18h 00m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'PRYJ', arrival: null,    departure: '23:00', day: 1 },
+      { station: 'LKO',  arrival: '01:35', departure: '01:50', day: 2 },
+      { station: 'CSMT', arrival: '17:00', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 530, availability: 'AVAILABLE', seats: 60 }, '3A': { fare: 1410, availability: 'AVAILABLE', seats: 26 }, '2A': { fare: 2030, availability: 'AVAILABLE', seats: 12 } },
+  },
+  {
+    train_number: '12230', train_name: 'Lucknow Mail',
+    source: 'CSMT', destination: 'PRYJ', departure: '10:00', arrival: '04:15', duration: '18h 15m',
+    running_days: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    stops: [
+      { station: 'CSMT', arrival: null,    departure: '10:00', day: 1 },
+      { station: 'LKO',  arrival: '01:40', departure: '01:55', day: 2 },
+      { station: 'PRYJ', arrival: '04:15', departure: null,    day: 2 },
+    ],
+    classes: { SL: { fare: 530, availability: 'AVAILABLE', seats: 48 }, '3A': { fare: 1410, availability: 'RAC 6', seats: 0 }, '2A': { fare: 2030, availability: 'AVAILABLE', seats: 9 } },
   },
 ];
 
