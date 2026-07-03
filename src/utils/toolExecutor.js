@@ -110,7 +110,7 @@ export const TOOL_DEFINITIONS = [
     function: {
       name: 'reset_search',
       description:
-        "Reset everything and go back to home screen. Use when user says 'naya search', 'phir se shuru', 'reset'.",
+        "Reset everything and go back to home screen. Use when user says 'home jao', 'home page', 'main page', 'mukhya page', 'mukhya prishtha', 'ghar jao', 'shuru se', 'naya search', 'phir se shuru', 'reset', 'main screen', 'starting mein jao', 'sab cancel karo'.",
       parameters: { type: 'object', properties: {} },
     },
   },
@@ -159,6 +159,14 @@ export const TOOL_DEFINITIONS = [
         },
         required: ['travel_class'],
       },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'show_my_bookings',
+      description: "Show the user's booked tickets screen. Use when user says 'meri tickets dikhao', 'meri bookings dikhao', 'booked tickets', 'mera PNR dikhao', 'purani booking dikhao'.",
+      parameters: { type: 'object', properties: {} },
     },
   },
   {
@@ -219,7 +227,12 @@ export function executeToolCall(toolName, toolArgs, currentState) {
       actions.push({ type: 'PUSH_HISTORY' });
       actions.push({ type: 'SELECT_TRAIN', train });
       actions.push({ type: 'NAVIGATE', screen: 'train_detail' });
-      return { actions, toolResult: { selected: train.train_name, number: train.train_number } };
+      return { actions, toolResult: {
+        selected: train.train_name,
+        number: train.train_number,
+        navigated_to: 'train_detail',
+        next: 'Train detail screen is now open. Ask user if they want to book this train (say "book karo") or go back to see other trains.',
+      }};
     }
 
     case 'get_train_details': {
@@ -238,7 +251,13 @@ export function executeToolCall(toolName, toolArgs, currentState) {
       actions.push({ type: 'SELECT_TRAIN', train });
       actions.push({ type: 'SELECT_CLASS', classCode: cls });
       actions.push({ type: 'NAVIGATE', screen: 'passenger_form' });
-      return { actions, toolResult: { train: train.train_name, class: cls } };
+      return { actions, toolResult: {
+        navigated_to: 'passenger_form',
+        train: train.train_name,
+        class: cls,
+        booking_status: 'INCOMPLETE — form not filled yet',
+        instruction: 'Passenger form is now open on screen. Tell the user to please fill in passenger name, age, and gender in the form. The booking is NOT done yet — user must fill the form manually, then proceed to review and pay.',
+      }};
     }
 
     case 'scroll_screen': {
@@ -294,12 +313,23 @@ export function executeToolCall(toolName, toolArgs, currentState) {
       actions.push({ type: 'SET_PNR', pnr });
       actions.push({ type: 'PUSH_HISTORY' });
       actions.push({ type: 'NAVIGATE', screen: 'payment' });
-      return { actions, toolResult: { confirmed: true, pnr } };
+      return { actions, toolResult: {
+        navigated_to: 'payment',
+        pnr,
+        booking_status: 'INCOMPLETE — payment pending',
+        instruction: 'Payment screen is now open. Tell the user to complete their payment via UPI or card to finalize the booking. The ticket is NOT confirmed until payment is done.',
+      }};
     }
 
     case 'select_class': {
       actions.push({ type: 'SELECT_CLASS', classCode: toolArgs.travel_class });
       return { actions, toolResult: { class: toolArgs.travel_class } };
+    }
+
+    case 'show_my_bookings': {
+      actions.push({ type: 'PUSH_HISTORY' });
+      actions.push({ type: 'NAVIGATE', screen: 'my_bookings' });
+      return { actions, toolResult: { navigated_to: 'my_bookings', next: 'My bookings screen is now showing. Tell the user they can see all their booked tickets here.' } };
     }
 
     case 'say': {
