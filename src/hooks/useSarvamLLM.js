@@ -20,7 +20,7 @@ export default function useSarvamLLM() {
 
     try {
       const body = {
-        model: 'sarvam-30b',
+        model: 'sarvam-105b',
         messages,
         temperature: 0.1,
         reasoning_effort: 'low',  // default is "medium" — saves tokens/latency for voice
