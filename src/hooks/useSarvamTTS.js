@@ -27,7 +27,8 @@ export default function useSarvamTTS() {
   };
 
   const speak = async (text) => {
-    if (!text || !API_KEY) return;
+    // Reject empty or garbage text (no Hindi/English letters → TTS returns 400)
+    if (!text || !API_KEY || !/[a-zA-Zऀ-ॿ]/.test(text)) return;
     stop(); // cancel any current/in-flight audio; captures new generation below
     const myGen = genRef.current;
 

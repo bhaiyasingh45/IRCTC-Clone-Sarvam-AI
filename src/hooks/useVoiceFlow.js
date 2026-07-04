@@ -35,10 +35,19 @@ DEFAULT CLASS: SL/Sleeper (use this automatically — do NOT ask user for class 
 • User says a train number or "pehli/doosri/teesri train" → call select_train.
 • User says "book karo" / "ticket chahiye" → call initiate_booking.
 • User says "wapis" / "back" / "pichhe" / "alag train" → call go_back.
+• User says "home jao" / "home page" / "main page" / "mukhya page" / "mukhya prishtha" / "ghar jao" / "shuru se" / "main screen" / "naya search" / "phir se shuru" / "reset" → call reset_search.
 • User says "date badlo" / "kal ke liye" / "parso" → call change_search_params.
-• User says "haan" / "confirm" on review screen → call confirm_booking.
+• User says "haan" / "confirm" on REVIEW screen → call confirm_booking.
 • User says "nahi" / "cancel" on review screen → call cancel_booking.
+• User says "meri tickets" / "meri bookings" / "booked tickets" → call show_my_bookings.
 • User says "band karo" / "stop" / "rok do" → call say("Theek hai, band ho raha hoon. Shubh yatra!")
+
+== BOOKING FLOW — DO NOT SKIP STEPS ==
+Booking only completes after: (1) passenger_form filled by user, (2) review screen, (3) payment screen, (4) user pays.
+• After initiate_booking → tell user to fill the form. NEVER say "booking ho gai" — booking is NOT done yet.
+• After select_train → ask if user wants to book or go back. Do NOT assume booking.
+• After confirm_booking → tell user to complete payment. Ticket is NOT confirmed until payment.
+• NEVER invent a booking confirmation. Only the success screen (after payment) confirms a booking.
 
 == CITY NAME MAPPING (pass raw user text to search_trains — system normalizes automatically) ==
 दिल्ली = Delhi = Dilli = New Delhi | मुंबई = Mumbai = Bambai | लखनऊ = Lucknow
@@ -185,9 +194,33 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
           log('llm_response', { phase: 'follow_up', spoken_text: spokenText });
         }
       } else {
-        // No tool call — model returned text directly (shouldn't happen with tool_choice:'required', but handle it)
+        // Model returned raw text instead of a tool call despite tool_choice:'required'.
+        // This happens when the model is confused (e.g. outputs "[" fragment).
+        // Retry once forcing it through the say tool.
         pushStep('responding');
-        spokenText = response.content || '';
+        const rawContent = response.content || '';
+        const looksLikeMalformed = !rawContent || !/[a-zA-Zऀ-ॿ]/.test(rawContent);
+
+        if (looksLikeMalformed) {
+          console.warn('[VoiceFlow] LLM returned malformed/empty content, retrying with say tool');
+          const retryMessages = [...messages, { role: 'user', content: '(Please respond using the say tool in Hindi.)' }];
+          const retry = await llm.complete(retryMessages, [SAY_TOOL], 'required');
+          if (myGen !== processGenRef.current) return;
+          const retrySayCall = retry.tool_calls?.[0];
+          if (retrySayCall?.function?.name === 'say') {
+            spokenText = JSON.parse(retrySayCall.function.arguments || '{}').text || '';
+          } else {
+            spokenText = retry.content || '';
+          }
+        } else {
+          spokenText = rawContent;
+        }
+      }
+
+      // Guard: only speak if text has actual Hindi/English letters (reject "[", "{", etc.)
+      if (spokenText && !/[a-zA-Zऀ-ॿ]/.test(spokenText)) {
+        console.warn('[VoiceFlow] Discarding garbage spoken_text:', JSON.stringify(spokenText));
+        spokenText = '';
       }
 
       historyRef.current = [
