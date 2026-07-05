@@ -10,6 +10,7 @@ import PassengerFormScreen from './components/screens/PassengerFormScreen.jsx';
 import ReviewScreen from './components/screens/ReviewScreen.jsx';
 import PaymentScreen from './components/screens/PaymentScreen.jsx';
 import SuccessScreen from './components/screens/SuccessScreen.jsx';
+import MyBookingsScreen from './components/screens/MyBookingsScreen.jsx';
 import useVoiceFlow from './hooks/useVoiceFlow.js';
 import ThinkingPanel from './components/ThinkingPanel.jsx';
 
@@ -37,6 +38,7 @@ const initialState = {
     lastAssistantText: '',
   },
   screenHistory: [],
+  bookings: [],
 };
 
 function appReducer(state, action) {
@@ -84,8 +86,11 @@ function appReducer(state, action) {
     case 'SET_VOICE_STATE':
       return { ...state, voiceState: { ...state.voiceState, ...action.voiceState } };
 
+    case 'ADD_BOOKING':
+      return { ...state, bookings: [...state.bookings, action.booking] };
+
     case 'RESET':
-      return { ...initialState };
+      return { ...initialState, bookings: state.bookings }; // preserve bookings across resets
 
     default:
       return state;
@@ -113,6 +118,9 @@ export default function App() {
       train_list: state.searchResults.length > 0
         ? `${state.searchResults.length} trains mili hain ${state.searchParams.source} se ${state.searchParams.destination} ke liye. Koi bhi train select karein.`
         : null,
+      my_bookings: state.bookings.length > 0
+        ? `Aapki ${state.bookings.length} booking${state.bookings.length > 1 ? 'en' : ''} hain.`
+        : 'Abhi tak koi booking nahi hui hai.',
     };
 
     const text = ANNOUNCEMENTS[cur];
@@ -133,10 +141,11 @@ export default function App() {
     review: <ReviewScreen {...screenProps} />,
     payment: <PaymentScreen {...screenProps} />,
     success: <SuccessScreen {...screenProps} />,
+    my_bookings: <MyBookingsScreen {...screenProps} />,
   };
 
   return (
-    <div className="min-h-screen bg-irctc-bg font-sans flex flex-col">
+    <div className="min-h-screen font-sans flex flex-col relative overflow-x-hidden pt-[60px]" style={{ background: '#f4f6fa' }}>
       <Header />
       <VoiceStatusBar voiceState={state.voiceState} />
 
