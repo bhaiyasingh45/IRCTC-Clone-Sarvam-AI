@@ -24,6 +24,18 @@ export default function PaymentScreen({ state, dispatch }) {
   const handlePay = () => {
     setPaying(true);
     setTimeout(() => {
+      dispatch({
+        type: 'ADD_BOOKING',
+        booking: {
+          pnr,
+          train: selectedTrain,
+          class: state.selectedClass,
+          passengers: [...passengers],
+          fare: totalFare,
+          searchParams: { ...state.searchParams },
+          bookedAt: new Date().toISOString(),
+        },
+      });
       dispatch({ type: 'NAVIGATE', screen: 'success' });
     }, 2000);
   };
