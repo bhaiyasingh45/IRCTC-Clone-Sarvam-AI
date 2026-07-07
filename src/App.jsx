@@ -147,7 +147,7 @@ export default function App() {
   return (
     <div className="min-h-screen font-sans flex flex-col relative overflow-x-hidden pt-[60px]" style={{ background: '#f4f6fa' }}>
       <Header />
-      <VoiceStatusBar voiceState={state.voiceState} />
+      <VoiceStatusBar voiceState={state.voiceState} detectedLanguage={voice.detectedLanguage} isConversationActive={voice.isConversationActive} />
 
       {errorMsg && (
         <div

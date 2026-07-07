@@ -1,4 +1,4 @@
-export default function VoiceStatusBar({ voiceState }) {
+export default function VoiceStatusBar({ voiceState, detectedLanguage, isConversationActive }) {
   const { isRecording, isProcessing, isSpeaking, lastUserText, lastAssistantText } = voiceState;
 
   const statusColor = isRecording
@@ -36,18 +36,25 @@ export default function VoiceStatusBar({ voiceState }) {
           )}
         </div>
 
-        {lastAssistantText && (
-          <div className="flex items-center gap-2 text-gray-700 min-w-0 max-w-lg">
-            {isSpeaking ? (
-              <span className="voice-bar-wave text-blue-500 flex items-center gap-0.5">
-                <span /><span /><span /><span /><span />
-              </span>
-            ) : (
-              <span className="text-blue-500">🔊</span>
-            )}
-            <span className="text-gray-600 truncate text-xs">{lastAssistantText}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-3 min-w-0">
+          {isConversationActive && detectedLanguage && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-xs text-gray-600 font-medium shrink-0">
+              🌐 {detectedLanguage.label}
+            </span>
+          )}
+          {lastAssistantText && (
+            <div className="flex items-center gap-2 text-gray-700 min-w-0 max-w-lg">
+              {isSpeaking ? (
+                <span className="voice-bar-wave text-blue-500 flex items-center gap-0.5">
+                  <span /><span /><span /><span /><span />
+                </span>
+              ) : (
+                <span className="text-blue-500">🔊</span>
+              )}
+              <span className="text-gray-600 truncate text-xs">{lastAssistantText}</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
