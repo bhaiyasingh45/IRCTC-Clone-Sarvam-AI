@@ -2,6 +2,17 @@ import { useState, useRef } from 'react';
 
 const API_KEY = import.meta.env.VITE_SARVAM_API_KEY;
 
+// Speaker names validated against bulbul:v3 available speakers list.
+// All use 'priya' — bulbul:v3 speakers are shared across languages;
+// target_language_code controls pronunciation/language, not the speaker name.
+const LANG_TTS_CONFIG = {
+  'hi-IN': { speaker: 'priya', target_language_code: 'hi-IN' },
+  'en-IN': { speaker: 'priya', target_language_code: 'en-IN' },
+  'gu-IN': { speaker: 'priya', target_language_code: 'gu-IN' },
+  'pa-IN': { speaker: 'priya', target_language_code: 'pa-IN' },
+  'bn-IN': { speaker: 'priya', target_language_code: 'bn-IN' },
+};
+
 export default function useSarvamTTS() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const currentAudioRef = useRef(null);
@@ -26,11 +37,13 @@ export default function useSarvamTTS() {
     setIsSpeaking(false);
   };
 
-  const speak = async (text) => {
-    // Reject empty or garbage text (no Hindi/English letters → TTS returns 400)
-    if (!text || !API_KEY || !/[a-zA-Zऀ-ॿ]/.test(text)) return;
+  const speak = async (text, langCode = 'hi-IN') => {
+    // Reject empty or garbage text (no letters from any supported script → TTS returns 400)
+    if (!text || !API_KEY || !/[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(text)) return;
     stop(); // cancel any current/in-flight audio; captures new generation below
     const myGen = genRef.current;
+
+    const ttsConfig = LANG_TTS_CONFIG[langCode] || LANG_TTS_CONFIG['hi-IN'];
 
     try {
       const res = await fetch('https://api.sarvam.ai/text-to-speech', {
@@ -40,12 +53,12 @@ export default function useSarvamTTS() {
           'api-subscription-key': API_KEY,
         },
         body: JSON.stringify({
-          text,                           // documented param (was 'inputs: [text]' — old format)
-          target_language_code: 'hi-IN',
-          speaker: 'priya',              // valid bulbul:v3 speaker (lowercase required)
+          text,
+          target_language_code: ttsConfig.target_language_code,
+          speaker: ttsConfig.speaker,
           model: 'bulbul:v3',
           pace: 1.05,
-          speech_sample_rate: 22050,     // supported by REST API
+          speech_sample_rate: 22050,
         }),
       });
 
