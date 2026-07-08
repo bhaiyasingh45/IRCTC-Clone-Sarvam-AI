@@ -7,7 +7,7 @@ export const TOOL_DEFINITIONS = [
     function: {
       name: 'search_trains',
       description:
-        'Search for trains between two cities. Call this whenever the user mentions travel between any two places. Pass city names in any form — Hindi, English, or mixed — the system normalizes them automatically. Available cities: Ballia, New Delhi (Delhi/Dilli), Lucknow, Prayagraj (Allahabad), Mumbai (Bombay/Bambai).',
+        'Search for trains between two cities. ONLY call this when the user has provided source city, destination city, AND a travel date. If date is missing, use the say tool to ask for it first. Pass city names in any form — Hindi, English, or mixed — the system normalizes automatically. Available cities: Ballia, New Delhi (Delhi/Dilli), Lucknow, Prayagraj (Allahabad), Mumbai (Bombay/Bambai).',
       parameters: {
         type: 'object',
         properties: {
@@ -172,8 +172,25 @@ export const TOOL_DEFINITIONS = [
   {
     type: 'function',
     function: {
+      name: 'add_passenger',
+      description: 'Add a passenger to the booking using voice input. Use when user says their name, age, and gender on the passenger_form screen. Only works on the passenger_form screen.',
+      parameters: {
+        type: 'object',
+        properties: {
+          name:   { type: 'string', description: 'Passenger full name' },
+          age:    { type: 'integer', description: 'Passenger age (1–120)' },
+          gender: { type: 'string', enum: ['M', 'F', 'T'], description: 'M = Male, F = Female, T = Other' },
+          berth:  { type: 'string', enum: ['LB', 'MB', 'UB', 'SL', 'SU'], description: 'Berth preference. Default LB if not mentioned.' },
+        },
+        required: ['name', 'age', 'gender'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'say',
-      description: 'Speak a response without taking any booking action. Use for: greetings ("hello", "namaste", "kya haal hai"), acknowledgments, unclear input, general questions, or anything not handled by other tools. NEVER call search_trains or select_train for greetings or chitchat — use say instead.',
+      description: 'Speak a response without taking any booking action. Use for: greetings, asking for missing info (e.g. asking for travel date when user only mentioned cities), acknowledgments, unclear input, or anything not handled by other tools. NEVER call search_trains unless user has provided source city, destination city, AND a travel date — if date is missing, use say to ask for it.',
       parameters: {
         type: 'object',
         properties: {
@@ -308,7 +325,49 @@ export function executeToolCall(toolName, toolArgs, currentState) {
       return { actions, toolResult: { cancelled: true } };
     }
 
+    case 'add_passenger': {
+      if (currentState.screen !== 'passenger_form') {
+        return { actions: [], toolResult: { error: 'add_passenger only works on the passenger_form screen.' } };
+      }
+      if (!toolArgs.name || !toolArgs.age) {
+        return { actions: [], toolResult: { error: 'Name and age are required to add a passenger.' } };
+      }
+      if (toolArgs.age < 1 || toolArgs.age > 120) {
+        return { actions: [], toolResult: { error: 'Age must be between 1 and 120.' } };
+      }
+      if (currentState.passengers.length >= 6) {
+        return { actions: [], toolResult: { error: 'Maximum 6 passengers already added.' } };
+      }
+      const passenger = {
+        name: toolArgs.name.trim(),
+        age: toolArgs.age,
+        gender: toolArgs.gender || 'M',
+        berth: toolArgs.berth || 'LB',
+      };
+      actions.push({ type: 'ADD_PASSENGER', passenger });
+      return { actions, toolResult: {
+        added: passenger,
+        total_passengers: currentState.passengers.length + 1,
+        instruction: `Passenger ${passenger.name} added. Tell the user the passenger was added successfully and ask if they want to add more or proceed to review (by clicking "Proceed to Review" button).`,
+      }};
+    }
+
     case 'confirm_booking': {
+      if (currentState.screen !== 'review') {
+        return { actions: [], toolResult: {
+          error: 'confirm_booking blocked — user is not on the review screen.',
+          current_screen: currentState.screen,
+          instruction: currentState.passengers.length === 0
+            ? 'User has not added any passengers yet. Tell them to please fill in passenger details (name, age, gender) in the form on screen first, then click "Proceed to Review".'
+            : 'User is not on the review screen yet. Tell them to fill the form and click "Proceed to Review" first.',
+        }};
+      }
+      if (currentState.passengers.length === 0) {
+        return { actions: [], toolResult: {
+          error: 'confirm_booking blocked — no passengers added.',
+          instruction: 'Tell the user they must add at least one passenger (name, age, gender) in the form before proceeding.',
+        }};
+      }
       const pnr = Math.floor(1000000000 + Math.random() * 9000000000).toString();
       actions.push({ type: 'SET_PNR', pnr });
       actions.push({ type: 'PUSH_HISTORY' });
