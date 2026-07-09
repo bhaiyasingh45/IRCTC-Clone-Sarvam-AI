@@ -23,8 +23,8 @@ export default function useSarvamLLM() {
         model: 'sarvam-105b',
         messages,
         temperature: 0.1,
-        reasoning_effort: 'low',  // default is "medium" — saves tokens/latency for voice
-        max_tokens: 512,          // reasoning tokens count toward this; cap prevents null content
+        reasoning_effort: 'high',
+        max_tokens: 512,
       };
 
       if (tools?.length) {
