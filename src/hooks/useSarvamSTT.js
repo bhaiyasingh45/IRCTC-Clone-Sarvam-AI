@@ -30,8 +30,11 @@ function encodeWAV(samples) {
   return new Blob([buffer], { type: 'audio/wav' });
 }
 
-export default function useSarvamSTT({ onSpeechStart, onTranscript, onAudioLevel } = {}) {
+export default function useSarvamSTT({ onSpeechStart, onTranscript, onAudioLevel, languageCode = 'hi-IN' } = {}) {
   const [status, setStatus] = useState('idle');
+
+  const languageCodeRef = useRef(languageCode);
+  languageCodeRef.current = languageCode;
 
   const audioCtxRef = useRef(null);
   const streamRef = useRef(null);
@@ -73,7 +76,7 @@ export default function useSarvamSTT({ onSpeechStart, onTranscript, onAudioLevel
     const formData = new FormData();
     formData.append('file', wavBlob, 'audio.wav');
     formData.append('model', 'saaras:v3');
-    formData.append('language_code', 'hi-IN');
+    formData.append('language_code', languageCodeRef.current);
     formData.append('mode', 'codemix');
 
     try {
