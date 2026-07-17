@@ -8,7 +8,7 @@ import { detectLanguage, DEFAULT_LANG } from '../utils/languageDetector.js';
 
 const MAX_HISTORY = 10;
 
-function buildSystemPrompt(state, detectedLang) {
+function buildSystemPrompt(state, detectedLang, conversationTurns) {
   const sp = state.searchParams;
   const today = new Date().toISOString().slice(0, 10);
 
@@ -29,7 +29,9 @@ TODAY'S DATE: ${today}
 DEFAULT CLASS: SL/Sleeper (use this automatically — do NOT ask user for class if they did not mention one)
 
 == MANDATORY TOOL RULES ==
-• User says any greeting (hello, hi, namaste, kya haal hai, etc.) → call say() with a warm greeting introducing yourself as RailSaarthi and asking where they want to travel — WRITE THE RESPONSE IN ${detectedLang.name}, NOT Hindi unless ${detectedLang.name} is Hindi.
+• User says any greeting AND this is the FIRST message (Conversation turns = 0) → call say() introducing yourself as RailSaarthi and asking where they want to travel — RESPOND IN ${detectedLang.name}.
+• If turns > 0 and user says something greeting-like: do NOT repeat the welcome. Respond to what they actually need.
+• User complains about language ("Hindi mein baat karo", "speak in Hindi", "English mat bolo") → call say() acknowledging and switching — respond in the language they requested, not the detected language.
 • Unclear or off-topic input → call say() with a helpful clarifying question — RESPOND IN ${detectedLang.name}.
 • NEVER call search_trains, select_train, or any booking tool for greetings or chitchat.
 • User mentions two cities / "X se Y" / "X to Y" / "from X to Y" BUT no date → call say() asking for the travel date — RESPOND IN ${detectedLang.name}.
@@ -74,6 +76,7 @@ Booking only completes after: (1) passenger_form filled by user, (2) review scre
 Screen: ${state.screen} | Route: ${sp.source || '?'} → ${sp.destination || '?'} | Date: ${sp.date || today} | Class: ${sp.travelClass || 'SL'}
 Results: ${state.searchResults.length} trains | Selected: ${state.selectedTrain ? state.selectedTrain.train_name : 'none'} | Passengers: ${state.passengers.length}
 Back stack: ${state.screenHistory.join(' → ') || '(home)'}
+Conversation turns so far: ${conversationTurns} — ${conversationTurns === 0 ? 'FIRST message, greet the user' : 'mid-conversation, DO NOT repeat the welcome greeting'}
 
 == TRAINS ON SCREEN ==
 ${trainsOnScreen.length > 0 ? JSON.stringify(trainsOnScreen) : 'none yet'}`;
@@ -126,9 +129,13 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
     dispatch({ type: 'SET_VOICE_STATE', voiceState: { lastUserText: transcript, isProcessing: true } });
     setInterimTranscript('');
 
-    // Detect language from transcript and update if changed
+    // Detect language — only switch if the transcript has enough signal.
+    // Short inputs like "Okay.", "Yes", "35" are too ambiguous to reliably
+    // identify language and would flip context incorrectly.
     const lang = detectLanguage(transcript);
-    if (lang.code !== detectedLangRef.current.code) {
+    const wordCount = transcript.trim().split(/\s+/).length;
+    const hasEnoughSignal = wordCount >= 3;
+    if (lang.code !== detectedLangRef.current.code && hasEnoughSignal) {
       detectedLangRef.current = lang;
       setDetectedLanguage(lang);
       log('language_detected', { code: lang.code, name: lang.name });
@@ -155,7 +162,8 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
     }
 
     const currentState = stateRef.current;
-    const systemPrompt = buildSystemPrompt(currentState, detectedLangRef.current);
+    const conversationTurns = Math.floor(historyRef.current.length / 2);
+    const systemPrompt = buildSystemPrompt(currentState, detectedLangRef.current, conversationTurns);
     const userMessage = { role: 'user', content: transcript };
     const messages = [
       { role: 'system', content: systemPrompt },
