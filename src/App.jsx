@@ -164,14 +164,23 @@ export default function App() {
 
       <ThinkingPanel thinkingStep={voice.thinkingStep} steps={voice.thinkingSteps} />
 
-      {/* Dev log button — bottom-left corner */}
-      <button
-        onClick={() => logger.download()}
-        title="Download session logs (JSON)"
-        className="fixed bottom-4 left-4 z-50 bg-slate-800 text-slate-300 text-xs font-mono px-2 py-1 rounded opacity-40 hover:opacity-100 transition-opacity"
-      >
-        ⬇ logs
-      </button>
+      {/* Dev log buttons — bottom-left corner */}
+      <div className="fixed bottom-4 left-4 z-50 flex gap-1 opacity-40 hover:opacity-100 transition-opacity">
+        <button
+          onClick={() => logger.download()}
+          title="Download session logs (JSON)"
+          className="bg-slate-800 text-slate-300 text-xs font-mono px-2 py-1 rounded"
+        >
+          ⬇ logs
+        </button>
+        <button
+          onClick={() => { logger.clear(); alert('Logs cleared.'); }}
+          title="Clear all stored logs"
+          className="bg-slate-800 text-slate-300 text-xs font-mono px-2 py-1 rounded"
+        >
+          ✕ clear
+        </button>
+      </div>
 
       {state.screen !== 'success' && (
         <VoiceAssistant
