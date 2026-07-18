@@ -65,5 +65,75 @@ export default function useSarvamLLM() {
     }
   };
 
-  return { isLoading, error, complete };
+  // Streaming variant: calls onArgChunk(fullArgBuffer) each time new tool-call argument bytes arrive.
+  // Falls back gracefully if the API doesn't stream — caller should try/catch and fall back to complete().
+  const completeStream = async (messages, tools = null, toolChoice = 'auto', onArgChunk) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const body = {
+        model: 'sarvam-105b',
+        messages,
+        temperature: 0.1,
+        reasoning_effort: 'high',
+        max_tokens: 512,
+        stream: true,
+      };
+      if (tools?.length) { body.tools = tools; body.tool_choice = toolChoice; }
+
+      const res = await fetch('https://api.sarvam.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'api-subscription-key': API_KEY },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`LLM HTTP ${res.status}`);
+
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let sseBuffer = '', argBuffer = '', toolName = null, toolId = null;
+
+      outer: while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        sseBuffer += dec.decode(value, { stream: true });
+        const lines = sseBuffer.split('\n');
+        sseBuffer = lines.pop() ?? '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const raw = line.slice(6).trim();
+          if (raw === '[DONE]') break outer;
+          try {
+            const chunk = JSON.parse(raw);
+            const delta = chunk.choices?.[0]?.delta;
+            if (delta?.tool_calls?.[0]) {
+              const tc = delta.tool_calls[0];
+              if (tc.id) toolId = tc.id;
+              if (tc.function?.name) toolName = tc.function.name;
+              if (tc.function?.arguments) {
+                argBuffer += tc.function.arguments;
+                onArgChunk?.(argBuffer);
+              }
+            }
+          } catch {}
+        }
+      }
+
+      setIsLoading(false);
+      const tcId = toolId || 'tc_stream';
+      const rawMessage = toolName
+        ? { role: 'assistant', content: null, tool_calls: [{ id: tcId, type: 'function', function: { name: toolName, arguments: argBuffer } }] }
+        : { role: 'assistant', content: argBuffer };
+      return {
+        content: toolName ? null : argBuffer,
+        tool_calls: toolName ? [{ id: tcId, type: 'function', function: { name: toolName, arguments: argBuffer } }] : null,
+        rawMessage,
+      };
+    } catch (err) {
+      setIsLoading(false);
+      setError('Thodi problem hui. Dobara bolein.');
+      throw err;
+    }
+  };
+
+  return { isLoading, error, complete, completeStream };
 }
