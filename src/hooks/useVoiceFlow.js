@@ -20,7 +20,12 @@ function buildSystemPrompt(state, detectedLang, conversationTurns) {
     departure: t.departure,
     arrival: t.arrival,
     duration: t.duration,
-    classes: Object.keys(t.classes),
+    fares: Object.fromEntries(
+      Object.entries(t.classes).map(([cls, info]) => [cls, `₹${info.fare}`])
+    ),
+    availability: Object.fromEntries(
+      Object.entries(t.classes).map(([cls, info]) => [cls, info.availability])
+    ),
   }));
 
   return `You are RailSaarthi, an IRCTC train booking voice assistant. You MUST use the provided tools to take action — never describe what you will do, just do it by calling the tool immediately.
@@ -70,7 +75,12 @@ Booking only completes after: (1) passenger_form filled by user, (2) review scre
 • Detected language: ${detectedLang.name} (${detectedLang.code}). ALWAYS respond in ${detectedLang.name}. Match the language the user spoke exactly. If they spoke Hindi → Hindi. English → English. Gujarati → Gujarati. Hinglish (Hindi+English mix) is fine for Hindi speakers.
 • Max 1-2 sentences. This is voice output — be brief.
 • After search_trains tool result: announce the number of trains found and ask which one they prefer — RESPOND IN ${detectedLang.name}.
-• Never invent train data. Use TRAINS ON SCREEN below.
+• Never invent train data. Use TRAINS ON SCREEN below — it contains fares and availability for each class.
+• If user asks "cheapest/sasti", compare SL fares across all trains and name the one with the lowest ₹ fare.
+• If user asks "fastest/tez", compare duration and name the shortest one.
+• If user asks "most expensive/mehengi", name the highest fare train.
+• If user asks about availability ("seats hain?"), check the availability field in TRAINS ON SCREEN.
+• Answer these comparison questions with say() directly — do NOT call search_trains again.
 
 == APP STATE ==
 Screen: ${state.screen} | Route: ${sp.source || '?'} → ${sp.destination || '?'} | Date: ${sp.date || today} | Class: ${sp.travelClass || 'SL'}
@@ -121,8 +131,34 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
   const tts = useSarvamTTS();
   const llm = useSarvamLLM();
 
+  // Pipeline guard: true while an LLM call is in flight.
+  // When the user speaks mid-pipeline we stop TTS but let LLM finish so history
+  // is preserved, then process the queued transcript immediately after.
+  const isProcessingPipelineRef = useRef(false);
+  const pendingTranscriptRef = useRef(null);
+
   // ── Core pipeline: transcript → LLM → TTS ───────────────────────────────
   const processTranscript = async (transcript) => {
+    // If a pipeline is already running, queue this transcript and return.
+    // The running pipeline will pick it up in its finally block.
+    if (isProcessingPipelineRef.current) {
+      pendingTranscriptRef.current = transcript;
+      return;
+    }
+    isProcessingPipelineRef.current = true;
+    try {
+      await _runPipeline(transcript);
+    } finally {
+      isProcessingPipelineRef.current = false;
+      const pending = pendingTranscriptRef.current;
+      if (pending && isConversationActiveRef.current) {
+        pendingTranscriptRef.current = null;
+        processTranscript(pending);
+      }
+    }
+  };
+
+  const _runPipeline = async (transcript) => {
     const myGen = ++processGenRef.current;
 
     log('stt', { transcript });
@@ -193,6 +229,7 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
       });
 
       let spokenText = '';
+      let streamedAnySentence = false; // true once any sentence is enqueued to TTS during streaming
 
       if (response.tool_calls?.length > 0) {
         const toolCall = response.tool_calls[0];
@@ -215,22 +252,69 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
           pushStep('responding');
 
           // Follow-up: send ONLY the say tool with tool_choice:'required'
-          // This guarantees the model calls say(text) — response.content is often null otherwise
+          // Stream the response — enqueue each sentence to TTS as it arrives so audio
+          // starts playing before the LLM finishes generating the full response.
           const followUpMessages = [
             ...messages,
             response.rawMessage,
             { role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(toolResult) },
           ];
-          const followUp = await llm.complete(followUpMessages, [SAY_TOOL], 'required');
+
+          let sentenceOffset = 0;
+          let streamExtractedText = '';
+
+          const onArgChunk = (fullArgBuffer) => {
+            if (myGen !== processGenRef.current) return;
+            // Extract text value from growing argument JSON: {"text": "sentence 1. sentence 2."}
+            const m = fullArgBuffer.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)(?:"|$)/s);
+            if (!m) return;
+            streamExtractedText = m[1].replace(/\\n/g, ' ').replace(/\\"/g, '"');
+            // Find complete sentences in the new portion (after what we've already spoken)
+            const newPart = streamExtractedText.slice(sentenceOffset);
+            const sentRegex = /([^।.!?]*[।.!?])\s*/g;
+            let match;
+            while ((match = sentRegex.exec(newPart)) !== null) {
+              const sentence = match[1].trim();
+              if (sentence && /[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(sentence)) {
+                const sLang = detectLanguage(sentence);
+                log('tts', { text: sentence, lang: sLang.code, model: 'bulbul:v3', streaming: true });
+                tts.enqueueSentence(sentence, sLang.code);
+                streamedAnySentence = true;
+              }
+              sentenceOffset += match[0].length;
+            }
+          };
+
+          let followUp;
+          try {
+            followUp = await llm.completeStream(followUpMessages, [SAY_TOOL], 'required', onArgChunk);
+          } catch (streamErr) {
+            console.warn('[VoiceFlow] Follow-up stream failed, falling back to complete():', streamErr?.message);
+            followUp = await llm.complete(followUpMessages, [SAY_TOOL], 'required');
+          }
           if (myGen !== processGenRef.current) return;
 
           const sayCall = followUp.tool_calls?.[0];
           if (sayCall?.function?.name === 'say') {
-            spokenText = JSON.parse(sayCall.function.arguments || '{}').text || '';
+            try {
+              spokenText = JSON.parse(sayCall.function.arguments || '{}').text || '';
+            } catch {
+              const mFull = (sayCall.function.arguments || '').match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/s);
+              spokenText = mFull ? mFull[1].replace(/\\n/g, ' ').replace(/\\"/g, '"') : '';
+            }
           } else {
-            spokenText = followUp.content || ''; // fallback if model returns text directly
+            spokenText = followUp.content || '';
           }
-          log('llm_response', { phase: 'follow_up', spoken_text: spokenText });
+
+          // Enqueue any trailing text after the last sentence boundary (e.g. fragment without punctuation)
+          const trailingText = (streamExtractedText || spokenText).slice(sentenceOffset).trim();
+          if (trailingText && /[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(trailingText)) {
+            const sLang = detectLanguage(trailingText);
+            tts.enqueueSentence(trailingText, sLang.code);
+            streamedAnySentence = true;
+          }
+
+          log('llm_response', { phase: 'follow_up', spoken_text: spokenText, streaming: streamedAnySentence });
         }
       } else {
         // Model returned raw text instead of a tool call despite tool_choice:'required'.
@@ -238,39 +322,88 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
         // Retry once forcing it through the say tool.
         pushStep('responding');
         const rawContent = response.content || '';
-        const looksLikeMalformed = !rawContent || !/[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(rawContent);
+        // Treat as malformed if: empty, no script chars, OR looks like a stringified tool call
+        // (model sometimes outputs JSON like '[{"name":"search_trains",...}]' as plain text)
+        const isStringifiedToolCall = /^\s*[\[{]/.test(rawContent) && /"name"\s*:/.test(rawContent);
+        const looksLikeMalformed = !rawContent
+          || !/[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(rawContent)
+          || isStringifiedToolCall;
 
         if (looksLikeMalformed) {
-          console.warn('[VoiceFlow] LLM returned malformed/empty content, retrying with all tools');
-          // Use full TOOL_DEFINITIONS so model can call add_passenger, search_trains, etc.
-          // (restricting to SAY_TOOL would block actions like add_passenger mid-collection)
-          const retryMessages = [
-            ...messages,
-            { role: 'user', content: '(You must call a tool. If you have collected all passenger info — name, age, gender — call add_passenger now. Otherwise call say() with your response.)' },
-          ];
-          const retry = await llm.complete(retryMessages, TOOL_DEFINITIONS, 'required');
-          if (myGen !== processGenRef.current) return;
-
-          if (retry.tool_calls?.length > 0) {
-            const retryToolCall = retry.tool_calls[0];
-            if (retryToolCall.function.name === 'say') {
-              spokenText = JSON.parse(retryToolCall.function.arguments || '{}').text || '';
-            } else {
-              // Non-say tool call in retry (e.g. add_passenger) — execute it
-              const retryToolArgs = JSON.parse(retryToolCall.function.arguments || '{}');
-              const { actions: retryActions, toolResult: retryResult } = executeToolCall(retryToolCall.function.name, retryToolArgs, stateRef.current);
-              for (const action of retryActions) dispatch(action);
-              log('tool_call', { phase: 'retry', tool: retryToolCall.function.name, args: retryToolArgs });
-              const retryFollowUp = await llm.complete(
-                [...retryMessages, retry.rawMessage, { role: 'tool', tool_call_id: retryToolCall.id, content: JSON.stringify(retryResult) }],
-                [SAY_TOOL], 'required'
-              );
-              if (myGen !== processGenRef.current) return;
-              const retrySayCall = retryFollowUp.tool_calls?.[0];
-              spokenText = retrySayCall ? JSON.parse(retrySayCall.function.arguments || '{}').text || '' : retryFollowUp.content || '';
-            }
+          if (isStringifiedToolCall) {
+            console.warn('[VoiceFlow] LLM returned stringified tool call as text — parsing and executing');
           } else {
-            spokenText = retry.content || '';
+            console.warn('[VoiceFlow] LLM returned malformed/empty content, retrying with all tools');
+          }
+
+          // First attempt: parse the stringified tool call directly and execute it
+          if (isStringifiedToolCall) {
+            try {
+              const parsed = JSON.parse(rawContent.trim());
+              const firstCall = Array.isArray(parsed) ? parsed[0] : parsed;
+              if (firstCall?.name) {
+                const toolName = firstCall.name;
+                const toolArgs = firstCall.parameters || firstCall.arguments || {};
+                log('tool_call', { phase: 'recovered', tool: toolName, args: toolArgs });
+                const { actions: recoveredActions, toolResult: recoveredResult } = executeToolCall(toolName, toolArgs, stateRef.current);
+                for (const action of recoveredActions) dispatch(action);
+                const fakeId = 'recovered_' + Date.now();
+                const recoveryFollowUp = await llm.complete(
+                  [
+                    ...messages,
+                    { role: 'assistant', content: null, tool_calls: [{ id: fakeId, type: 'function', function: { name: toolName, arguments: JSON.stringify(toolArgs) } }] },
+                    { role: 'tool', tool_call_id: fakeId, content: JSON.stringify(recoveredResult) },
+                  ],
+                  [SAY_TOOL], 'required'
+                );
+                if (myGen !== processGenRef.current) return;
+                const recoverySay = recoveryFollowUp.tool_calls?.[0];
+                if (recoverySay?.function?.name === 'say') {
+                  spokenText = JSON.parse(recoverySay.function.arguments || '{}').text || '';
+                  log('llm_response', { phase: 'recovered_follow_up', spoken_text: spokenText });
+                }
+                // Skip the LLM retry below if we got a valid spokenText
+                if (spokenText) {
+                  // fall through to speak it
+                } else {
+                  throw new Error('recovery follow-up produced no text');
+                }
+              }
+            } catch (parseErr) {
+              console.warn('[VoiceFlow] Could not parse stringified tool call, falling back to retry:', parseErr?.message);
+              // fall through to retry below
+            }
+          }
+
+          if (!spokenText) {
+            // LLM retry: use full TOOL_DEFINITIONS so model can call any tool
+            const retryMessages = [
+              ...messages,
+              { role: 'user', content: '(You must call a tool now. Call search_trains / add_passenger if you have the needed info, otherwise call say().)' },
+            ];
+            const retry = await llm.complete(retryMessages, TOOL_DEFINITIONS, 'required');
+            if (myGen !== processGenRef.current) return;
+
+            if (retry.tool_calls?.length > 0) {
+              const retryToolCall = retry.tool_calls[0];
+              if (retryToolCall.function.name === 'say') {
+                spokenText = JSON.parse(retryToolCall.function.arguments || '{}').text || '';
+              } else {
+                const retryToolArgs = JSON.parse(retryToolCall.function.arguments || '{}');
+                const { actions: retryActions, toolResult: retryResult } = executeToolCall(retryToolCall.function.name, retryToolArgs, stateRef.current);
+                for (const action of retryActions) dispatch(action);
+                log('tool_call', { phase: 'retry', tool: retryToolCall.function.name, args: retryToolArgs });
+                const retryFollowUp = await llm.complete(
+                  [...retryMessages, retry.rawMessage, { role: 'tool', tool_call_id: retryToolCall.id, content: JSON.stringify(retryResult) }],
+                  [SAY_TOOL], 'required'
+                );
+                if (myGen !== processGenRef.current) return;
+                const retrySayCall = retryFollowUp.tool_calls?.[0];
+                spokenText = retrySayCall ? JSON.parse(retrySayCall.function.arguments || '{}').text || '' : retryFollowUp.content || '';
+              }
+            } else {
+              spokenText = retry.content || '';
+            }
           }
         } else {
           spokenText = rawContent;
@@ -296,13 +429,15 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
       });
 
       if (spokenText) {
-        // Detect language from the response text itself — this ensures the TTS
-        // language code always matches the actual script being spoken,
-        // even if the LLM responded in a different language than the user spoke.
-        const responseLang = detectLanguage(spokenText);
+        // If no sentences were streamed yet (direct say path or streaming fallback),
+        // enqueue the full text now so waitForQueue has something to play.
+        if (!streamedAnySentence && /[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(spokenText)) {
+          const responseLang = detectLanguage(spokenText);
+          log('tts', { text: spokenText, lang: responseLang.code, model: 'bulbul:v3' });
+          tts.enqueueSentence(spokenText, responseLang.code);
+        }
         setVoiceStatus('bot_speaking');
-        log('tts', { text: spokenText, lang: responseLang.code, model: 'bulbul:v3' });
-        await tts.speak(spokenText, responseLang.code);
+        await tts.waitForQueue();
         if (myGen !== processGenRef.current) return;
       }
 
@@ -323,12 +458,18 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
   const stt = useSarvamSTT({
     languageCode: detectedLanguage.code,
     onSpeechStart: () => {
-      processGenRef.current++; // invalidate any in-flight LLM/TTS
+      // Always stop TTS — user may be interrupting bot speech.
       tts.stop();
       setInterimTranscript('');
       setVoiceStatus('user_speaking');
       clearThinking();
       dispatch({ type: 'SET_VOICE_STATE', voiceState: { isSpeaking: false, isProcessing: false } });
+      // Only cancel the LLM pipeline if it's NOT currently running.
+      // If it IS running, we let it finish in the background so history is preserved.
+      // The user's new transcript will be queued and processed right after.
+      if (!isProcessingPipelineRef.current) {
+        processGenRef.current++;
+      }
     },
     onTranscript: processTranscript,
     onInterim: (text) => setInterimTranscript(text),
