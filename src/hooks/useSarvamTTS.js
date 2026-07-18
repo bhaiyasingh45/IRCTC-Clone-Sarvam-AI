@@ -16,42 +16,34 @@ const LANG_TTS_CONFIG = {
 export default function useSarvamTTS() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const currentAudioRef = useRef(null);
-  const blobUrlRef = useRef(null);
-  // Generation counter: every stop()/speak() increments this; in-flight fetches
-  // check their captured generation against the current one and bail if stale.
+  // Generation counter: every stop() increments this; in-flight fetches check
+  // their captured generation against the current one and bail if stale.
   const genRef = useRef(0);
+  // Promise chain for the sentence queue — each enqueueSentence() appends to the tail.
+  // Fetches start immediately (parallel); playback is sequential.
+  const queueTailRef = useRef(Promise.resolve());
 
   const initAudioContext = () => {};
 
   const stop = () => {
-    genRef.current++; // invalidate any concurrent in-flight speak() calls
+    genRef.current++;
     if (currentAudioRef.current) {
       currentAudioRef.current.pause();
       currentAudioRef.current.src = '';
       currentAudioRef.current = null;
     }
-    if (blobUrlRef.current) {
-      URL.revokeObjectURL(blobUrlRef.current);
-      blobUrlRef.current = null;
-    }
+    // Reset queue so new calls start a fresh chain
+    queueTailRef.current = Promise.resolve();
     setIsSpeaking(false);
   };
 
-  const speak = async (text, langCode = 'hi-IN') => {
-    // Reject empty or garbage text (no letters from any supported script → TTS returns 400)
-    if (!text || !API_KEY || !/[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(text)) return;
-    stop(); // cancel any current/in-flight audio; captures new generation below
-    const myGen = genRef.current;
-
+  // Fetch TTS audio for text and return a blob URL, or null on failure/cancellation.
+  const _fetchAudio = async (text, langCode, myGen) => {
     const ttsConfig = LANG_TTS_CONFIG[langCode] || LANG_TTS_CONFIG['hi-IN'];
-
     try {
       const res = await fetch('https://api.sarvam.ai/text-to-speech', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'api-subscription-key': API_KEY,
-        },
+        headers: { 'Content-Type': 'application/json', 'api-subscription-key': API_KEY },
         body: JSON.stringify({
           text,
           target_language_code: ttsConfig.target_language_code,
@@ -61,75 +53,70 @@ export default function useSarvamTTS() {
           speech_sample_rate: 22050,
         }),
       });
-
-      // If a newer speak() was called while we were fetching, discard this result
-      if (myGen !== genRef.current) return;
-
-      if (!res.ok) {
-        console.error('TTS API error:', res.status, await res.text());
-        return;
-      }
-
+      if (myGen !== genRef.current || !res.ok) return null;
       const data = await res.json();
-      if (myGen !== genRef.current) return;
-
-      const base64Audio = data.audios?.[0];
-      if (!base64Audio) {
-        console.error('TTS: no audio in response', data);
-        return;
-      }
-
-      const binaryStr = atob(base64Audio);
-      const bytes = new Uint8Array(binaryStr.length);
-      for (let i = 0; i < binaryStr.length; i++) {
-        bytes[i] = binaryStr.charCodeAt(i);
-      }
-
+      if (myGen !== genRef.current) return null;
+      const base64 = data.audios?.[0];
+      if (!base64) return null;
+      const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
       const blob = new Blob([bytes], { type: 'audio/wav' });
-      const url = URL.createObjectURL(blob);
-      blobUrlRef.current = url;
-
-      await new Promise((resolve) => {
-        // Final generation check before playing
-        if (myGen !== genRef.current) {
-          URL.revokeObjectURL(url);
-          if (blobUrlRef.current === url) blobUrlRef.current = null;
-          resolve();
-          return;
-        }
-
-        const audio = new Audio(url);
-        currentAudioRef.current = audio;
-        setIsSpeaking(true);
-
-        audio.onended = () => {
-          if (currentAudioRef.current === audio) currentAudioRef.current = null;
-          if (blobUrlRef.current === url) {
-            URL.revokeObjectURL(url);
-            blobUrlRef.current = null;
-          }
-          setIsSpeaking(false);
-          resolve();
-        };
-
-        audio.onerror = (e) => {
-          console.error('TTS audio playback error:', e);
-          if (currentAudioRef.current === audio) currentAudioRef.current = null;
-          setIsSpeaking(false);
-          resolve();
-        };
-
-        audio.play().catch((err) => {
-          console.error('TTS audio.play() blocked:', err);
-          setIsSpeaking(false);
-          resolve();
-        });
-      });
-    } catch (err) {
-      console.error('TTS speak error:', err);
-      setIsSpeaking(false);
+      return URL.createObjectURL(blob);
+    } catch {
+      return null;
     }
   };
 
-  return { isSpeaking, speak, stop, initAudioContext };
+  // Play a blob URL and resolve when done (or immediately if stale/cancelled).
+  const _playUrl = (url, myGen) => new Promise(resolve => {
+    if (myGen !== genRef.current) { resolve(); return; }
+    const audio = new Audio(url);
+    currentAudioRef.current = audio;
+    setIsSpeaking(true);
+    const cleanup = () => {
+      if (currentAudioRef.current === audio) currentAudioRef.current = null;
+      URL.revokeObjectURL(url);
+      resolve();
+    };
+    audio.onended = cleanup;
+    audio.onerror = cleanup;
+    audio.play().catch(cleanup);
+  });
+
+  // Enqueue a sentence for streaming playback.
+  // Audio fetch starts IMMEDIATELY (parallel with current playback).
+  // Playback is sequential: this sentence plays after the previous one finishes.
+  const enqueueSentence = (text, langCode = 'hi-IN') => {
+    if (!text || !API_KEY || !/[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(text)) return;
+    const myGen = genRef.current;
+    // Start fetching audio RIGHT NOW — don't wait for previous sentence to finish
+    const audioPromise = _fetchAudio(text, langCode, myGen);
+    // Chain onto queue: play this sentence after previous one finishes
+    queueTailRef.current = queueTailRef.current.then(async () => {
+      if (myGen !== genRef.current) return;
+      const url = await audioPromise;
+      if (url && myGen === genRef.current) await _playUrl(url, myGen);
+    });
+  };
+
+  // Await this after all sentences have been enqueued.
+  // Resolves when the last sentence finishes playing.
+  const waitForQueue = async () => {
+    await queueTailRef.current;
+    setIsSpeaking(false);
+  };
+
+  // Legacy single-text speak (used for announcements and short one-off phrases).
+  // Stops any current audio before playing.
+  const speak = async (text, langCode = 'hi-IN') => {
+    if (!text || !API_KEY || !/[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(text)) return;
+    stop();
+    const myGen = genRef.current;
+    const url = await _fetchAudio(text, langCode, myGen);
+    if (url && myGen === genRef.current) {
+      await _playUrl(url, myGen);
+    }
+    if (myGen === genRef.current) setIsSpeaking(false);
+  };
+
+  return { isSpeaking, speak, enqueueSentence, waitForQueue, stop, initAudioContext };
 }
