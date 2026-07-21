@@ -229,7 +229,13 @@ export function executeToolCall(toolName, toolArgs, currentState) {
       actions.push({ type: 'SET_SEARCH_PARAMS', params: { source: src, destination: dst, date, travelClass: toolArgs.travel_class || currentState.searchParams.travelClass || 'SL' } });
       actions.push({ type: 'SET_SEARCH_RESULTS', results });
       actions.push({ type: 'NAVIGATE', screen: 'train_list' });
-      return { actions, toolResult: { found: results.length, trains: results.map((t) => ({ number: t.train_number, name: t.train_name })) } };
+      return { actions, toolResult: {
+        found: results.length,
+        trains: results.map((t) => ({ number: t.train_number, name: t.train_name })),
+        instruction: results.length > 0
+          ? `Search complete. Call say() to tell the user: "${results.length} trains found from ${src} to ${dst}. Which one would you like?" — respond in the user's language, 1 sentence only.`
+          : `No trains found. Call say() to tell the user no trains were found between ${src} and ${dst} and suggest checking the route — respond in the user's language.`,
+      } };
     }
 
     case 'select_train': {
@@ -286,12 +292,12 @@ export function executeToolCall(toolName, toolArgs, currentState) {
 
     case 'go_back': {
       actions.push({ type: 'POP_HISTORY' });
-      return { actions, toolResult: { navigated: 'back' } };
+      return { actions, toolResult: { navigated: 'back', instruction: 'Call say() to tell the user you went back — 1 sentence in their language.' } };
     }
 
     case 'reset_search': {
       actions.push({ type: 'RESET' });
-      return { actions, toolResult: { reset: true } };
+      return { actions, toolResult: { reset: true, instruction: 'Call say() to tell the user the search was reset and you\'re ready for a new search — 1 sentence in their language.' } };
     }
 
     case 'change_search_params': {
@@ -313,7 +319,12 @@ export function executeToolCall(toolName, toolArgs, currentState) {
         }
         actions.push({ type: 'NAVIGATE', screen: 'train_list' });
       }
-      return { actions, toolResult: { updated: params, trains_found: src && dst ? searchTrains(src, dst).length : 0 } };
+      const changeResults = src && dst ? searchTrains(src, dst) : [];
+      return { actions, toolResult: {
+        updated: params,
+        trains_found: changeResults.length,
+        instruction: `Params updated. Call say() to confirm what changed and announce ${changeResults.length} trains found — 1 sentence in their language.`,
+      } };
     }
 
     case 'cancel_booking': {
@@ -322,7 +333,7 @@ export function executeToolCall(toolName, toolArgs, currentState) {
       } else {
         actions.push({ type: 'RESET' });
       }
-      return { actions, toolResult: { cancelled: true } };
+      return { actions, toolResult: { cancelled: true, instruction: 'Call say() to tell the user the booking was cancelled — 1 sentence in their language.' } };
     }
 
     case 'add_passenger': {
