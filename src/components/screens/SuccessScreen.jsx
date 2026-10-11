@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { STATIONS } from '../../data/trains.js';
+import { useLanguage } from '../../i18n/LanguageContext.jsx';
+import { stationLabel, classLabel, genderLabel, formatDate } from '../../i18n/helpers.js';
 
 const COACHES = ['S1', 'S2', 'S3', 'S4', 'S5', 'B1', 'B2', 'A1'];
 
@@ -12,6 +14,7 @@ function randomBerth() {
 }
 
 export default function SuccessScreen({ state, dispatch }) {
+  const { t, lang } = useLanguage();
   const { selectedTrain, selectedClass, passengers, pnr, searchParams, totalFare } = state;
   const [show, setShow] = useState(false);
   const [assignments] = useState(() =>
@@ -30,32 +33,30 @@ export default function SuccessScreen({ state, dispatch }) {
 
   const srcStation = STATIONS[selectedTrain.source];
   const dstStation = STATIONS[selectedTrain.destination];
-  const journeyDate = searchParams.date
-    ? new Date(searchParams.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-    : 'N/A';
+  const journeyDate = searchParams.date ? formatDate(lang, searchParams.date) : t('success.na');
 
   const handleDownload = () => {
     const content = [
-      'IRCTC E-Ticket',
+      t('success.ticketTitle'),
       '==============',
       `PNR: ${pnr}`,
-      `Train: ${selectedTrain.train_number} - ${selectedTrain.train_name}`,
-      `From: ${srcStation?.name} (${srcStation?.code})`,
-      `To: ${dstStation?.name} (${dstStation?.code})`,
-      `Date: ${journeyDate}`,
-      `Class: ${selectedClass}`,
+      `${t('success.train')}: ${selectedTrain.train_number} - ${selectedTrain.train_name}`,
+      `${t('success.from')}: ${stationLabel(t, srcStation?.code)} (${srcStation?.code})`,
+      `${t('success.to')}: ${stationLabel(t, dstStation?.code)} (${dstStation?.code})`,
+      `${t('success.date')}: ${journeyDate}`,
+      `${t('success.class')}: ${classLabel(t, selectedClass)}`,
       '',
-      'Passengers:',
+      t('success.ticketPassengers'),
       ...(passengers || []).map((p, i) =>
-        `${i + 1}. ${p.name} | ${p.age} yrs | ${p.gender} | Coach: ${assignments[i]?.coach} | Berth: ${assignments[i]?.berth}`
+        t('success.ticketPax', { n: i + 1, name: p.name, age: p.age, gender: genderLabel(t, p.gender), coach: assignments[i]?.coach, berth: assignments[i]?.berth })
       ),
       '',
-      `Total Fare: Rs. ${totalFare}`,
+      t('success.ticketTotal', { fare: totalFare }),
       '',
-      '** This is a demo ticket - not valid for actual travel **',
+      t('success.ticketDemo'),
     ].join('\n');
 
-    const blob = new Blob([content], { type: 'text/plain' });
+    const blob = new Blob(['\uFEFF' + content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -92,12 +93,12 @@ export default function SuccessScreen({ state, dispatch }) {
           </svg>
         </div>
 
-        <h1 className="text-2xl font-bold text-green-700 mb-1">Booking Confirmed!</h1>
-        <p className="text-green-600 text-lg mb-5">बुकिंग सफल रही! 🎉</p>
+        <h1 className="text-2xl font-bold text-green-700 mb-1">{t('success.title')}</h1>
+        <p className="text-green-600 text-lg mb-5">{t('success.subtitle')}</p>
 
         {/* PNR */}
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-green-700 font-medium mb-1">PNR NUMBER</p>
+          <p className="text-sm text-green-700 font-medium mb-1">{t('success.pnrNumber')}</p>
           <p className="font-mono font-bold text-2xl text-navy tracking-widest">{pnr}</p>
         </div>
 
@@ -105,31 +106,31 @@ export default function SuccessScreen({ state, dispatch }) {
         <div className="text-left bg-slate-50 rounded-lg p-5 mb-5">
           <div className="grid grid-cols-2 gap-3 text-sm mb-4">
             <div>
-              <span className="text-slate-500">Train</span>
+              <span className="text-slate-500">{t('success.train')}</span>
               <p className="font-semibold text-navy">{selectedTrain.train_number} · {selectedTrain.train_name}</p>
             </div>
             <div>
-              <span className="text-slate-500">Route</span>
+              <span className="text-slate-500">{t('success.route')}</span>
               <p className="font-semibold text-navy">{srcStation?.code} → {dstStation?.code}</p>
             </div>
             <div>
-              <span className="text-slate-500">Date</span>
+              <span className="text-slate-500">{t('success.date')}</span>
               <p className="font-semibold text-navy">{journeyDate}</p>
             </div>
             <div>
-              <span className="text-slate-500">Class</span>
-              <p className="font-semibold text-navy">{selectedClass}</p>
+              <span className="text-slate-500">{t('success.class')}</span>
+              <p className="font-semibold text-navy">{classLabel(t, selectedClass)}</p>
             </div>
           </div>
 
           <div className="border-t border-slate-200 pt-3">
-            <p className="text-sm font-semibold text-slate-600 mb-2">Passenger & Seat Details</p>
+            <p className="text-sm font-semibold text-slate-600 mb-2">{t('success.seatTitle')}</p>
             <div className="space-y-2">
               {(passengers || []).map((p, i) => (
                 <div key={i} className="flex items-center justify-between text-sm">
                   <span className="font-medium text-navy">{p.name}</span>
                   <span className="text-slate-500">
-                    Coach: <span className="font-semibold text-navy">{assignments[i]?.coach}</span> · Berth: <span className="font-semibold text-navy">{assignments[i]?.berth}</span>
+                    {t('success.coach')}: <span className="font-semibold text-navy">{assignments[i]?.coach}</span> · {t('success.berth')}: <span className="font-semibold text-navy">{assignments[i]?.berth}</span>
                   </span>
                 </div>
               ))}
@@ -139,7 +140,7 @@ export default function SuccessScreen({ state, dispatch }) {
 
         {/* Fare */}
         <div className="text-sm text-slate-600 mb-6">
-          Total paid: <span className="font-bold text-navy text-lg">₹{totalFare}</span>
+          {t('success.totalPaid')} <span className="font-bold text-navy text-lg">₹{totalFare}</span>
         </div>
 
         {/* Action buttons */}
@@ -148,13 +149,13 @@ export default function SuccessScreen({ state, dispatch }) {
             onClick={handleDownload}
             className="h-10 px-6 bg-navy hover:bg-navy-dark text-white rounded font-medium text-sm transition-colors flex items-center gap-2"
           >
-            📥 Download Ticket
+            {t('success.download')}
           </button>
           <button
             onClick={() => dispatch({ type: 'RESET' })}
             className="h-10 px-6 bg-irctc-orange hover:bg-orange-600 text-white rounded font-medium text-sm transition-colors flex items-center gap-2"
           >
-            🏠 Book Another Ticket
+            {t('success.bookAnother')}
           </button>
         </div>
       </div>

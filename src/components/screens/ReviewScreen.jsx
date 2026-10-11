@@ -1,6 +1,9 @@
 import { STATIONS } from '../../data/trains.js';
+import { useLanguage } from '../../i18n/LanguageContext.jsx';
+import { stationLabel, classLabel, genderLabel, formatDate } from '../../i18n/helpers.js';
 
 export default function ReviewScreen({ state, dispatch }) {
+  const { t, lang } = useLanguage();
   const { selectedTrain, selectedClass, passengers, contactNumber, totalFare, searchParams } = state;
 
   if (!selectedTrain) {
@@ -33,9 +36,7 @@ export default function ReviewScreen({ state, dispatch }) {
     }
   };
 
-  const journeyDate = searchParams.date
-    ? new Date(searchParams.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-    : 'N/A';
+  const journeyDate = searchParams.date ? formatDate(lang, searchParams.date) : t('review.na');
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-6">
@@ -43,42 +44,42 @@ export default function ReviewScreen({ state, dispatch }) {
       <div className="bg-amber-50 border border-amber-200 rounded-lg px-6 py-4 mb-5 flex items-center gap-3">
         <span className="text-2xl">⚠️</span>
         <div>
-          <h1 className="font-bold text-amber-800 text-lg">Booking Confirmation</h1>
-          <p className="text-amber-700 text-sm">कृपया बुकिंग की जानकारी जाँचें और पुष्टि करें</p>
+          <h1 className="font-bold text-amber-800 text-lg">{t('review.title')}</h1>
+          <p className="text-amber-700 text-sm">{t('review.subtitle')}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         {/* Journey details */}
         <div className="bg-white rounded-lg border border-slate-200 p-5">
-          <h2 className="text-navy font-bold text-sm uppercase tracking-wide mb-3 pb-2 border-b border-slate-100">Journey Details</h2>
+          <h2 className="text-navy font-bold text-sm uppercase tracking-wide mb-3 pb-2 border-b border-slate-100">{t('review.journey')}</h2>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <dt className="text-slate-500">Train</dt>
+              <dt className="text-slate-500">{t('review.train')}</dt>
               <dd className="font-semibold text-navy text-right">{selectedTrain.train_number} · {selectedTrain.train_name}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">From</dt>
-              <dd className="font-medium">{srcStation?.name} ({srcStation?.code})</dd>
+              <dt className="text-slate-500">{t('review.from')}</dt>
+              <dd className="font-medium">{stationLabel(t, srcStation?.code)} ({srcStation?.code})</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">To</dt>
-              <dd className="font-medium">{dstStation?.name} ({dstStation?.code})</dd>
+              <dt className="text-slate-500">{t('review.to')}</dt>
+              <dd className="font-medium">{stationLabel(t, dstStation?.code)} ({dstStation?.code})</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Date</dt>
+              <dt className="text-slate-500">{t('review.date')}</dt>
               <dd className="font-medium">{journeyDate}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Class</dt>
-              <dd className="font-medium">{selectedClass} ({selectedClass === 'SL' ? 'Sleeper' : selectedClass === '3A' ? '3 Tier AC' : selectedClass === '2A' ? '2 Tier AC' : 'First AC'})</dd>
+              <dt className="text-slate-500">{t('review.class')}</dt>
+              <dd className="font-medium">{selectedClass} ({classLabel(t, selectedClass)})</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Quota</dt>
-              <dd className="font-medium">General (GN)</dd>
+              <dt className="text-slate-500">{t('review.quota')}</dt>
+              <dd className="font-medium">{t('review.quotaGeneral')}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Contact</dt>
+              <dt className="text-slate-500">{t('review.contact')}</dt>
               <dd className="font-medium">{contactNumber}</dd>
             </div>
           </dl>
@@ -86,22 +87,22 @@ export default function ReviewScreen({ state, dispatch }) {
 
         {/* Fare summary */}
         <div className="bg-white rounded-lg border border-slate-200 p-5">
-          <h2 className="text-navy font-bold text-sm uppercase tracking-wide mb-3 pb-2 border-b border-slate-100">Fare Summary</h2>
+          <h2 className="text-navy font-bold text-sm uppercase tracking-wide mb-3 pb-2 border-b border-slate-100">{t('review.fareSummary')}</h2>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <dt className="text-slate-500">Base Fare × {paxCount} pax</dt>
+              <dt className="text-slate-500">{t('review.baseFare', { n: paxCount })}</dt>
               <dd className="font-medium">₹{classInfo?.fare || 0} × {paxCount} = ₹{baseFare}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">Reservation</dt>
+              <dt className="text-slate-500">{t('review.reservation')}</dt>
               <dd className="font-medium">₹{reservation}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-500">GST (5%)</dt>
+              <dt className="text-slate-500">{t('review.gst')}</dt>
               <dd className="font-medium">₹{gst}</dd>
             </div>
             <div className="flex justify-between pt-2 border-t border-slate-200 mt-2">
-              <dt className="font-bold text-navy text-base">TOTAL</dt>
+              <dt className="font-bold text-navy text-base">{t('review.total')}</dt>
               <dd className="font-bold text-navy text-base">₹{displayTotal}</dd>
             </div>
           </dl>
@@ -110,12 +111,12 @@ export default function ReviewScreen({ state, dispatch }) {
 
       {/* Passengers */}
       <div className="bg-white rounded-lg border border-slate-200 p-5 mb-4">
-        <h2 className="text-navy font-bold text-sm uppercase tracking-wide mb-3">Passengers</h2>
+        <h2 className="text-navy font-bold text-sm uppercase tracking-wide mb-3">{t('review.passengers')}</h2>
         <div className="space-y-2">
           {passengers.map((p, i) => (
             <div key={i} className="flex items-center justify-between text-sm bg-slate-50 p-3 rounded">
               <span className="font-medium text-navy">{i + 1}. {p.name}</span>
-              <span className="text-slate-500">{p.age} yrs · {p.gender === 'M' ? 'Male' : p.gender === 'F' ? 'Female' : 'Other'} · {p.berth}</span>
+              <span className="text-slate-500">{t('form.paxLine', { age: p.age, gender: genderLabel(t, p.gender), berth: t(`form.berth.${p.berth}`) })}</span>
             </div>
           ))}
         </div>
@@ -124,7 +125,7 @@ export default function ReviewScreen({ state, dispatch }) {
       {/* Voice hint */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-5 text-center">
         <span className="text-blue-700 text-sm">
-          🎤 <strong>"Haan"</strong> bolein confirm karne ke liye · <strong>"Nahi"</strong> bolein cancel karne ke liye
+          {t('review.voiceHint')}
         </span>
       </div>
 
@@ -134,13 +135,13 @@ export default function ReviewScreen({ state, dispatch }) {
           onClick={handleCancel}
           className="h-11 px-6 border-2 border-red-300 text-red-600 hover:bg-red-50 rounded font-medium text-sm transition-colors"
         >
-          ✕ Cancel Booking
+          {t('review.cancel')}
         </button>
         <button
           onClick={handleConfirm}
           className="h-11 px-8 bg-green-600 hover:bg-green-700 text-white font-bold rounded transition-colors"
         >
-          ✓ Confirm & Pay →
+          {t('review.confirm')}
         </button>
       </div>
     </div>
