@@ -1,4 +1,6 @@
 import { STATIONS } from '../data/trains.js';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
+import { stationLabel, dayLabel, availabilityLabel } from '../i18n/helpers.js';
 
 const CLASS_CONFIG = {
   SL:  { bg: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '#86efac', num: '#16a34a', label: '#15803d' },
@@ -7,9 +9,8 @@ const CLASS_CONFIG = {
   '1A':{ bg: 'linear-gradient(135deg, #faf5ff, #e9d5ff)', border: '#c084fc', num: '#9333ea', label: '#7e22ce' },
 };
 
-const DAY_SHORT = { Mon:'M', Tue:'T', Wed:'W', Thu:'T', Fri:'F', Sat:'S', Sun:'S' };
-
 function AvailabilityBadge({ cls, info }) {
+  const { t } = useLanguage();
   const cfg = CLASS_CONFIG[cls] || { bg: '#f8fafc', border: '#cbd5e1', num: '#475569', label: '#64748b' };
   const isAvail = info.availability === 'AVAILABLE';
   const isWL    = info.availability.startsWith('WL');
@@ -21,13 +22,14 @@ function AvailabilityBadge({ cls, info }) {
       <span className="font-extrabold text-base leading-none" style={{ color: cfg.num }}>{cls}</span>
       <span className="font-bold text-sm mt-0.5" style={{ color: cfg.label }}>₹{info.fare}</span>
       <span className={`text-xs font-semibold mt-0.5 ${isAvail ? 'text-green-600' : isWL ? 'text-red-500' : isRAC ? 'text-amber-600' : 'text-slate-500'}`}>
-        {isAvail ? `✅ ${info.seats}` : info.availability}
+        {isAvail ? `✅ ${info.seats}` : availabilityLabel(t, info.availability)}
       </span>
     </div>
   );
 }
 
 export default function TrainCard({ train, onSelect }) {
+  const { t } = useLanguage();
   const srcStation = STATIONS[train.source];
   const dstStation = STATIONS[train.destination];
   const stops = train.stops.length - 2;
@@ -61,12 +63,12 @@ export default function TrainCard({ train, onSelect }) {
               {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => {
                 const active = train.running_days.includes(d);
                 return (
-                  <span key={d}
-                    className="w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center transition-colors"
+                  <span key={d} title={dayLabel(t, d)}
+                    className="min-w-[1.75rem] h-7 px-1 rounded-full text-xs font-bold flex items-center justify-center transition-colors"
                     style={active
                       ? { background: '#1a3a6b', color: '#fff' }
                       : { background: '#f1f5f9', color: '#94a3b8' }}>
-                    {DAY_SHORT[d]}
+                    {t(`card.d.${d}`)}
                   </span>
                 );
               })}
@@ -78,7 +80,7 @@ export default function TrainCard({ train, onSelect }) {
             className="flex items-center gap-1.5 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-md hover:shadow-orange-300/50 hover:scale-105 active:scale-95 opacity-0 group-hover:opacity-100"
             style={{ background: 'linear-gradient(135deg, #FF9933 0%, #f97316 100%)' }}
           >
-            Book <span>→</span>
+            {t('card.book')} <span>→</span>
           </button>
         </div>
 
@@ -88,7 +90,7 @@ export default function TrainCard({ train, onSelect }) {
           <div className="text-center min-w-[72px]">
             <div className="text-3xl font-black text-navy leading-none">{train.departure}</div>
             <div className="text-sm font-bold text-navy mt-1">{srcStation?.code}</div>
-            <div className="text-xs text-slate-500 truncate max-w-[80px]">{srcStation?.name}</div>
+            <div className="text-xs text-slate-500 truncate max-w-[96px]">{stationLabel(t, srcStation?.name)}</div>
           </div>
 
           {/* Route line */}
@@ -102,7 +104,7 @@ export default function TrainCard({ train, onSelect }) {
               <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, #f97316, #138808)' }} />
             </div>
             <span className="text-xs text-slate-400">
-              {stops > 0 ? `${stops} stop${stops > 1 ? 's' : ''}` : 'Direct'}
+              {stops > 0 ? t('card.stops', { n: stops }) : t('card.direct')}
             </span>
           </div>
 
@@ -110,7 +112,7 @@ export default function TrainCard({ train, onSelect }) {
           <div className="text-center min-w-[72px]">
             <div className="text-3xl font-black text-navy leading-none">{train.arrival}</div>
             <div className="text-sm font-bold text-navy mt-1">{dstStation?.code}</div>
-            <div className="text-xs text-slate-500 truncate max-w-[80px]">{dstStation?.name}</div>
+            <div className="text-xs text-slate-500 truncate max-w-[96px]">{stationLabel(t, dstStation?.name)}</div>
           </div>
         </div>
 

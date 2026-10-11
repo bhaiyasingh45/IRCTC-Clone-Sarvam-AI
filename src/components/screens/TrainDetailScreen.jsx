@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { STATIONS } from '../../data/trains.js';
+import { useLanguage } from '../../i18n/LanguageContext.jsx';
+import { stationLabel, classLabel, dayLabel, availabilityLabel } from '../../i18n/helpers.js';
 
 const CLASS_COLORS = {
   SL: 'bg-green-50 text-green-700 border-green-200',
@@ -9,6 +11,7 @@ const CLASS_COLORS = {
 };
 
 export default function TrainDetailScreen({ state, dispatch }) {
+  const { t } = useLanguage();
   const { selectedTrain } = state;
   const [activeTab, setActiveTab] = useState('route');
   const [selectedClass, setSelectedClass] = useState(state.selectedClass || (selectedTrain ? Object.keys(selectedTrain.classes)[0] : 'SL'));
@@ -38,15 +41,15 @@ export default function TrainDetailScreen({ state, dispatch }) {
         <div className="w-72 flex-shrink-0">
           <div className="bg-white rounded-lg border border-slate-200 p-4">
             <div className="text-center py-4">
-              <div className="text-sm font-semibold text-navy">{srcStation?.name}</div>
+              <div className="text-sm font-semibold text-navy">{stationLabel(t, srcStation?.name)}</div>
               <div className="text-2xl font-bold text-navy my-1">{selectedTrain.departure}</div>
               <div className="text-slate-400 text-xs my-2">── {selectedTrain.duration} ──</div>
               <div className="text-2xl font-bold text-navy my-1">{selectedTrain.arrival}</div>
-              <div className="text-sm font-semibold text-navy">{dstStation?.name}</div>
+              <div className="text-sm font-semibold text-navy">{stationLabel(t, dstStation?.name)}</div>
             </div>
 
             <div className="border-t border-slate-100 pt-3 mt-3">
-              <p className="text-xs text-slate-500 font-medium mb-2">Select Class</p>
+              <p className="text-xs text-slate-500 font-medium mb-2">{t('detail.selectClass')}</p>
               <div className="space-y-2">
                 {Object.entries(selectedTrain.classes).map(([cls, info]) => {
                   const isAvail = info.availability === 'AVAILABLE';
@@ -62,7 +65,7 @@ export default function TrainDetailScreen({ state, dispatch }) {
                       <span className="font-semibold">{cls}</span>
                       <span className="font-bold">₹{info.fare}</span>
                       <span className={isAvail ? 'text-green-600' : isWL ? 'text-red-600' : 'text-amber-600'}>
-                        {isAvail ? `✅ ${info.seats}` : info.availability}
+                        {isAvail ? `✅ ${info.seats}` : availabilityLabel(t, info.availability)}
                       </span>
                     </button>
                   );
@@ -74,10 +77,10 @@ export default function TrainDetailScreen({ state, dispatch }) {
               onClick={handleBook}
               className="w-full mt-4 h-10 bg-irctc-orange hover:bg-orange-600 text-white font-semibold rounded text-sm transition-colors"
             >
-              Book This Train →
+              {t('detail.bookThis')} →
             </button>
             <button onClick={handleBack} className="w-full mt-2 h-9 border border-slate-300 text-slate-600 rounded text-sm hover:bg-slate-50 transition-colors">
-              ← Back
+              ← {t('detail.back')}
             </button>
           </div>
         </div>
@@ -89,11 +92,11 @@ export default function TrainDetailScreen({ state, dispatch }) {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-xl font-bold">{selectedTrain.train_name}</h1>
-                <p className="text-blue-200 text-sm mt-0.5">Train #{selectedTrain.train_number}</p>
+                <p className="text-blue-200 text-sm mt-0.5">{t('detail.trainNo', { n: selectedTrain.train_number })}</p>
               </div>
               <div className="flex gap-1">
                 {selectedTrain.running_days.map((d) => (
-                  <span key={d} className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded">{d}</span>
+                  <span key={d} className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded">{dayLabel(t, d)}</span>
                 ))}
               </div>
             </div>
@@ -105,10 +108,10 @@ export default function TrainDetailScreen({ state, dispatch }) {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 text-sm font-medium capitalize transition-colors border-b-2
+                className={`px-6 py-3 text-sm font-medium transition-colors border-b-2
                   ${activeTab === tab ? 'border-irctc-orange text-irctc-orange' : 'border-transparent text-slate-600 hover:text-navy'}`}
               >
-                {tab}
+                {t(`detail.tab.${tab}`)}
               </button>
             ))}
           </div>
@@ -121,11 +124,11 @@ export default function TrainDetailScreen({ state, dispatch }) {
                   <thead>
                     <tr className="bg-navy text-white">
                       <th className="px-4 py-3 text-left font-medium">#</th>
-                      <th className="px-4 py-3 text-left font-medium">Station</th>
-                      <th className="px-4 py-3 text-center font-medium">Arrival</th>
-                      <th className="px-4 py-3 text-center font-medium">Departure</th>
-                      <th className="px-4 py-3 text-center font-medium">Day</th>
-                      <th className="px-4 py-3 text-center font-medium">Halt</th>
+                      <th className="px-4 py-3 text-left font-medium">{t('detail.station')}</th>
+                      <th className="px-4 py-3 text-center font-medium">{t('detail.arrival')}</th>
+                      <th className="px-4 py-3 text-center font-medium">{t('detail.departure')}</th>
+                      <th className="px-4 py-3 text-center font-medium">{t('detail.day')}</th>
+                      <th className="px-4 py-3 text-center font-medium">{t('detail.halt')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -137,14 +140,14 @@ export default function TrainDetailScreen({ state, dispatch }) {
                         <tr key={i} className={`border-b border-slate-100 ${isFirst || isLast ? 'bg-blue-50' : 'hover:bg-slate-50'}`}>
                           <td className="px-4 py-3 text-slate-500">{i + 1}</td>
                           <td className="px-4 py-3">
-                            <div className="font-semibold text-navy">{st?.name || stop.station}</div>
-                            <div className="text-xs text-slate-400">{st?.fullName}</div>
+                            <div className="font-semibold text-navy">{st ? stationLabel(t, st.name) : stop.station}</div>
+                            <div className="text-xs text-slate-400">{st ? t(`detail.full.${st.code}`) : ''}</div>
                           </td>
                           <td className="px-4 py-3 text-center font-mono">{stop.arrival || '--'}</td>
                           <td className="px-4 py-3 text-center font-mono">{stop.departure || '--'}</td>
-                          <td className="px-4 py-3 text-center text-slate-500">Day {stop.day}</td>
+                          <td className="px-4 py-3 text-center text-slate-500">{t('detail.dayN', { n: stop.day })}</td>
                           <td className="px-4 py-3 text-center text-slate-400">
-                            {stop.arrival && stop.departure ? '5 min' : '--'}
+                            {stop.arrival && stop.departure ? t('detail.haltMin', { n: 5 }) : '--'}
                           </td>
                         </tr>
                       );
@@ -165,13 +168,13 @@ export default function TrainDetailScreen({ state, dispatch }) {
                         <div>
                           <span className="font-bold text-lg">{cls}</span>
                           <span className="ml-2 text-sm opacity-75">
-                            {cls === 'SL' ? 'Sleeper' : cls === '3A' ? '3 Tier AC' : cls === '2A' ? '2 Tier AC' : 'First AC'}
+                            {classLabel(t, cls)}
                           </span>
                         </div>
                         <div className="text-right">
                           <div className="font-bold text-xl">₹{info.fare}</div>
                           <div className={`text-sm font-semibold ${isAvail ? 'text-green-600' : isWL ? 'text-red-600' : 'text-amber-600'}`}>
-                            {isAvail ? `${info.seats} seats available` : info.availability}
+                            {isAvail ? t('detail.seatsAvail', { n: info.seats }) : availabilityLabel(t, info.availability)}
                           </div>
                         </div>
                       </div>
@@ -187,11 +190,11 @@ export default function TrainDetailScreen({ state, dispatch }) {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-navy text-white">
-                        <th className="px-4 py-3 text-left">Class</th>
-                        <th className="px-4 py-3 text-right">Base Fare</th>
-                        <th className="px-4 py-3 text-right">Reservation</th>
-                        <th className="px-4 py-3 text-right">GST (5%)</th>
-                        <th className="px-4 py-3 text-right font-bold">Total</th>
+                        <th className="px-4 py-3 text-left">{t('detail.class')}</th>
+                        <th className="px-4 py-3 text-right">{t('detail.baseFare')}</th>
+                        <th className="px-4 py-3 text-right">{t('detail.reservation')}</th>
+                        <th className="px-4 py-3 text-right">{t('detail.gst')}</th>
+                        <th className="px-4 py-3 text-right font-bold">{t('detail.total')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -218,21 +221,21 @@ export default function TrainDetailScreen({ state, dispatch }) {
           {/* Bottom bar */}
           <div className="mt-4 flex items-center justify-between">
             <button onClick={handleBack} className="h-10 px-6 border border-slate-300 text-slate-600 rounded text-sm hover:bg-slate-50 transition-colors">
-              ← Back to List
+              ← {t('detail.backToList')}
             </button>
             <div className="flex items-center gap-3">
               {classInfo && (
                 <span className="text-navy font-bold text-lg">₹{classInfo.fare + 60 + Math.round(classInfo.fare * 0.05)}</span>
               )}
               <button onClick={handleBook} className="h-10 px-6 bg-irctc-orange hover:bg-orange-600 text-white font-semibold rounded transition-colors">
-                Book This Train →
+                {t('detail.bookThis')} →
               </button>
             </div>
           </div>
 
           <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
             <p className="text-xs text-blue-700">
-              <strong>🎤 Voice:</strong> <em>"Is train ko book karo Sleeper mein"</em> ya <em>"3A mein kitne seat hain?"</em>
+              <strong>🎤 {t('detail.voice')}</strong> <em>{t('detail.voiceHint')}</em>
             </p>
           </div>
         </div>

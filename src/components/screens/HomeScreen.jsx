@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useLanguage } from '../../i18n/LanguageContext.jsx';
+import { stationLabel } from '../../i18n/helpers.js';
 import { searchTrains, STATIONS } from '../../data/trains.js';
 import trainImg from '../../../reference/Vande_Bharat_Express.jpg';
 import sarvamLogo from '../../../reference/sarvam_ai_logo.svg';
@@ -14,15 +16,9 @@ const STATION_OPTIONS = Object.values(STATIONS);
 const CLASS_OPTIONS = ['SL', '3A', '2A', '1A'];
 const QUOTA_OPTIONS = ['GN', 'TQ', 'LD', 'SS'];
 
-const DESTINATIONS = [
-  { img: imgTajMahal,    name: 'Taj Mahal',       city: 'Agra' },
-  { img: imgRedFort,     name: 'Red Fort',         city: 'Delhi' },
-  { img: imgVaranasi,    name: 'Varanasi',         city: 'Varanasi' },
-  { img: imgHawaMahal,   name: 'Hawa Mahal',       city: 'Jaipur' },
-  { img: imgAjanta,      name: 'Ajanta & Ellora',  city: 'Aurangabad' },
-  { img: imgLucknow,     name: 'Lucknow',          city: 'Lucknow' },
-  { img: imgRameshwaram, name: 'Rameshwaram',      city: 'Rameshwaram' },
-];
+const DESTINATIONS = [imgTajMahal, imgRedFort, imgVaranasi, imgHawaMahal, imgAjanta, imgLucknow, imgRameshwaram]
+  .map((img, i) => ({ img, key: `home.dest${i + 1}` }));
+const CHIP_KEYS = [1, 2, 3, 4, 5, 6, 7, 8].map(n => `home.chip${n}`);
 const MARQUEE_ITEMS = [...DESTINATIONS, ...DESTINATIONS];
 
 // India tricolor: saffron #FF9933, white #FFFFFF, green #138808
@@ -35,6 +31,7 @@ const TRICOLOR_BAR = (
 );
 
 export default function HomeScreen({ state, dispatch }) {
+  const { t } = useLanguage();
   const today = new Date().toISOString().slice(0, 10);
   const [source, setSource]           = useState(state.searchParams.source || '');
   const [destination, setDestination] = useState(state.searchParams.destination || '');
@@ -42,7 +39,7 @@ export default function HomeScreen({ state, dispatch }) {
   const [travelClass, setTravelClass] = useState(state.searchParams.travelClass || 'SL');
   const [quota, setQuota]             = useState(state.searchParams.quota || 'GN');
 
-  const handleSwap = () => { const t = source; setSource(destination); setDestination(t); };
+  const handleSwap = () => { const tmp = source; setSource(destination); setDestination(tmp); };
 
   const handleSearch = () => {
     if (!source || !destination) return;
@@ -92,44 +89,44 @@ export default function HomeScreen({ state, dispatch }) {
               <div className="px-6 pt-5 pb-4">
                 <div className="flex items-center gap-3 mb-1">
                   <div className="h-5 w-1.5 rounded-full" style={{ background: 'linear-gradient(to bottom, #FF9933, #138808)' }} />
-                  <h2 className="text-navy font-bold text-lg uppercase tracking-wide">Book Your Ticket</h2>
+                  <h2 className="text-navy font-bold text-lg uppercase tracking-wide">{t('home.title')}</h2>
                 </div>
                 <div className="mt-2 mb-4">{TRICOLOR_BAR}</div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">From</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">{t('home.from')}</label>
                     <select value={source} onChange={e => setSource(e.target.value)}
                       className="w-full h-10 border border-slate-200 rounded-xl px-3 text-sm text-navy focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 bg-white transition-all shadow-sm">
-                      <option value="">Select Source Station</option>
-                      {STATION_OPTIONS.map(s => <option key={s.code} value={s.name}>{s.name} ({s.code})</option>)}
+                      <option value="">{t('home.selectSource')}</option>
+                      {STATION_OPTIONS.map(s => <option key={s.code} value={s.name}>{stationLabel(t, s.name)} ({s.code})</option>)}
                     </select>
                   </div>
 
                   <div className="flex justify-center">
                     <button onClick={handleSwap}
                       className="flex items-center gap-1.5 text-xs font-semibold text-navy hover:text-white border border-slate-200 hover:border-navy hover:bg-navy rounded-full px-4 py-1.5 transition-all shadow-sm">
-                      ⇅ Swap
+                      ⇅ {t('home.swap')}
                     </button>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">To</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">{t('home.to')}</label>
                     <select value={destination} onChange={e => setDestination(e.target.value)}
                       className="w-full h-10 border border-slate-200 rounded-xl px-3 text-sm text-navy focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 bg-white transition-all shadow-sm">
-                      <option value="">Select Destination</option>
-                      {STATION_OPTIONS.map(s => <option key={s.code} value={s.name}>{s.name} ({s.code})</option>)}
+                      <option value="">{t('home.selectDest')}</option>
+                      {STATION_OPTIONS.map(s => <option key={s.code} value={s.name}>{stationLabel(t, s.name)} ({s.code})</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Date of Journey</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">{t('home.date')}</label>
                     <input type="date" value={date} min={today} onChange={e => setDate(e.target.value)}
                       className="w-full h-10 border border-slate-200 rounded-xl px-3 text-sm text-navy focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all shadow-sm" />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Class</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">{t('home.class')}</label>
                     <div className="flex gap-2">
                       {CLASS_OPTIONS.map(cls => (
                         <button key={cls} onClick={() => setTravelClass(cls)}
@@ -145,7 +142,7 @@ export default function HomeScreen({ state, dispatch }) {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Quota</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">{t('home.quota')}</label>
                     <div className="flex gap-2">
                       {QUOTA_OPTIONS.map(q => (
                         <button key={q} onClick={() => setQuota(q)}
@@ -169,7 +166,7 @@ export default function HomeScreen({ state, dispatch }) {
                   style={(!source || !destination)
                     ? { background: '#cbd5e1' }
                     : { background: 'linear-gradient(135deg, #FF9933 0%, #f97316 50%, #ea580c 100%)', boxShadow: '0 4px 20px rgba(249,115,22,0.35)' }}>
-                  🔍 Search Trains
+                  🔍 {t('home.search')}
                 </button>
               </div>
             </div>
@@ -184,7 +181,7 @@ export default function HomeScreen({ state, dispatch }) {
               <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #0f2447 0%, #1a3a6b 60%, #0d1f3c 100%)' }} />
               <img
                 src={trainImg}
-                alt="Vande Bharat Express"
+                alt={t('home.heroAlt')}
                 className="absolute inset-0 w-full h-full"
                 style={{ objectFit: 'contain', objectPosition: 'center right', opacity: 0.92 }}
                 onError={e => { e.target.style.display = 'none'; }}
@@ -204,18 +201,18 @@ export default function HomeScreen({ state, dispatch }) {
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-4xl">🎤</span>
                     <h1 className="text-3xl font-extrabold leading-tight tracking-tight">
-                      Voice se Train<br />Book Karein
+                      {t('home.heroLine1')}<br />{t('home.heroLine2')}
                     </h1>
                   </div>
                   <p className="text-blue-200 text-sm mt-3 leading-relaxed">
-                    Hindi ya Hinglish mein bolein aur apni train book karein — bina ek button dabaaye bhi!
+                    {t('home.heroDesc')}
                   </p>
                   {/* Sarvam badge */}
                   <div className="flex items-center gap-2.5 mt-4 w-fit rounded-full px-4 py-2"
                     style={{ background: 'linear-gradient(135deg, #FF9933 0%, #f97316 100%)', boxShadow: '0 2px 14px rgba(255,153,51,0.5)' }}>
                     <img src={sarvamLogo} alt="Sarvam AI" style={{ width: 30, height: 30, filter: 'brightness(0) invert(1)', flexShrink: 0 }} />
                     <div className="flex flex-col leading-none">
-                      <span className="text-white/80 font-semibold" style={{ fontSize: 10 }}>Powered by</span>
+                      <span className="text-white/80 font-semibold" style={{ fontSize: 10 }}>{t('home.poweredBy')}</span>
                       <span className="text-white font-extrabold text-sm tracking-wide">Sarvam AI</span>
                     </div>
                   </div>
@@ -228,15 +225,15 @@ export default function HomeScreen({ state, dispatch }) {
               <div className="px-5 pt-4 pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <div className="h-4 w-1 rounded-full" style={{ background: '#138808' }} />
-                  <h3 className="text-navy font-bold text-sm uppercase tracking-widest">Voice Booking Kaise Karein?</h3>
+                  <h3 className="text-navy font-bold text-sm uppercase tracking-widest">{t('home.stepsTitle')}</h3>
                 </div>
               </div>
               <div className="px-5 pt-4 pb-3 grid grid-cols-2 gap-3">
                 {[
-                  { step: '1', icon: '🎤', title: 'Mic Dabao',           desc: 'Niche diye mic button ko dabao aur bolna shuru karo', color: '#FF9933', bg: 'rgba(255,153,51,0.10)',  border: 'rgba(255,153,51,0.25)' },
-                  { step: '2', icon: '🗣️', title: 'Station Bolein',      desc: '"Delhi se Lucknow kal ki train dhundo"',              color: '#1a3a6b', bg: 'rgba(26,58,107,0.07)',   border: 'rgba(26,58,107,0.18)'  },
-                  { step: '3', icon: '🚆', title: 'Train Select Karein', desc: '"Pehli train book karo" ya train number bolein',       color: '#138808', bg: 'rgba(19,136,8,0.08)',    border: 'rgba(19,136,8,0.22)'   },
-                  { step: '4', icon: '✅', title: 'Confirm Karein',      desc: '"Haan" bolein aur booking complete ho jayegi',         color: '#f97316', bg: 'rgba(249,115,22,0.09)',  border: 'rgba(249,115,22,0.25)' },
+                  { step: '1', icon: '🎤', title: t('home.step1.title'), desc: t('home.step1.desc'), color: '#FF9933', bg: 'rgba(255,153,51,0.10)',  border: 'rgba(255,153,51,0.25)' },
+                  { step: '2', icon: '🗣️', title: t('home.step2.title'), desc: t('home.step2.desc'), color: '#1a3a6b', bg: 'rgba(26,58,107,0.07)',   border: 'rgba(26,58,107,0.18)'  },
+                  { step: '3', icon: '🚆', title: t('home.step3.title'), desc: t('home.step3.desc'), color: '#138808', bg: 'rgba(19,136,8,0.08)',    border: 'rgba(19,136,8,0.22)'   },
+                  { step: '4', icon: '✅', title: t('home.step4.title'), desc: t('home.step4.desc'), color: '#f97316', bg: 'rgba(249,115,22,0.09)',  border: 'rgba(249,115,22,0.25)' },
                 ].map(item => (
                   <div key={item.step} className="flex gap-3 p-3 rounded-xl transition-colors"
                     style={{ background: item.bg, border: `1px solid ${item.border}` }}>
@@ -265,33 +262,16 @@ export default function HomeScreen({ state, dispatch }) {
                         style={{ background: '#FF9933', height: h, animation: `sound-wave 0.8s ease-in-out ${i * 0.1}s infinite` }} />
                     ))}
                   </div>
-                  <span className="text-xs font-bold text-orange-300 uppercase tracking-widest">Yeh bolke try karein</span>
+                  <span className="text-xs font-bold text-orange-300 uppercase tracking-widest">{t('home.tryTitle')}</span>
                 </div>
 
                 <div className="overflow-hidden py-3">
                   <div className="marquee-track" style={{ animationDuration: '22s' }}>
-                    {[
-                      '"Delhi se Mumbai train dhundo"',
-                      '"Kal ki Rajdhani chahiye"',
-                      '"Sleeper mein seat hai?"',
-                      '"Tatkal ticket book karo"',
-                      '"Pehli train select karo"',
-                      '"Haan, confirm karo"',
-                      '"Mumbai se Pune koi train?"',
-                      '"AC coach mein kitni seats hain?"',
-                      '"Delhi se Mumbai train dhundo"',
-                      '"Kal ki Rajdhani chahiye"',
-                      '"Sleeper mein seat hai?"',
-                      '"Tatkal ticket book karo"',
-                      '"Pehli train select karo"',
-                      '"Haan, confirm karo"',
-                      '"Mumbai se Pune koi train?"',
-                      '"AC coach mein kitni seats hain?"',
-                    ].map((cmd, i) => (
+                    {[...CHIP_KEYS, ...CHIP_KEYS].map((cmd, i) => (
                       <span key={i} className="flex-shrink-0 flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border"
                         style={{ background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,153,51,0.30)', color: '#e2e8f0', whiteSpace: 'nowrap' }}>
                         <span style={{ color: '#FF9933' }}>🎙</span>
-                        {cmd}
+                        {t(cmd)}
                       </span>
                     ))}
                   </div>
@@ -313,7 +293,7 @@ export default function HomeScreen({ state, dispatch }) {
                   style={{ width: 196, height: 128 }}>
                   <img
                     src={dest.img}
-                    alt={dest.name}
+                    alt={t(`${dest.key}.name`)}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                   {/* Gradient overlay */}
@@ -326,8 +306,8 @@ export default function HomeScreen({ state, dispatch }) {
                     <div className="flex-1" style={{ background: '#138808' }} />
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <p className="text-white text-sm font-bold leading-none drop-shadow">{dest.name}</p>
-                    <p className="text-orange-300 text-xs mt-1 font-medium">{dest.city}</p>
+                    <p className="text-white text-sm font-bold leading-none drop-shadow">{t(`${dest.key}.name`)}</p>
+                    <p className="text-orange-300 text-xs mt-1 font-medium">{t(`${dest.key}.city`)}</p>
                   </div>
                 </div>
               ))}
