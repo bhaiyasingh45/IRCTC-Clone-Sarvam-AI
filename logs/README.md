@@ -24,8 +24,11 @@ __irctcLog.clear()      // wipe localStorage
 | `llm_response` | model, response text, whether a tool was called, finish_reason |
 | `tool_call` | tool name, args the LLM passed, current screen |
 | `tool_result` | tool name, result object returned to LLM |
-| `tts` | text sent to Bulbul v3, speaker, model |
-| `error` | phase (stt/llm_or_tts), error message, screen |
+| `conversation_start` | user clicked the mic button; current screen |
+| `mic_ready` | microphone + audio graph started, status moved to listening |
+| `tts` | text sent to Bulbul v3, speaker, model (`phase: welcome` = greeting spoken on start) |
+| `error` | phase (stt/llm_or_tts/mic_start), error message, screen |
+| `language_change` | user switched the header language selector (`from`, `to`) |
 | `nav` | (reserved) |
 
 ## Entry shape
