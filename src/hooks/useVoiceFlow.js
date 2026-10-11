@@ -1,14 +1,15 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import useSarvamSTT from './useSarvamSTT.js';
 import useSarvamTTS from './useSarvamTTS.js';
 import useSarvamLLM from './useSarvamLLM.js';
 import { TOOL_DEFINITIONS, SAY_TOOL, executeToolCall } from '../utils/toolExecutor.js';
 import { log } from '../utils/sessionLogger.js';
-import { detectLanguage, DEFAULT_LANG } from '../utils/languageDetector.js';
+import { SPEAKABLE_RE } from '../i18n/languages.js';
+import { useLanguage, translate } from '../i18n/LanguageContext.jsx';
 
 const MAX_HISTORY = 10;
 
-function buildSystemPrompt(state, detectedLang, conversationTurns) {
+function buildSystemPrompt(state, lang, conversationTurns) {
   const sp = state.searchParams;
   const today = new Date().toISOString().slice(0, 10);
 
@@ -34,12 +35,12 @@ TODAY'S DATE: ${today}
 DEFAULT CLASS: SL/Sleeper (use this automatically — do NOT ask user for class if they did not mention one)
 
 == MANDATORY TOOL RULES ==
-• User says any greeting AND this is the FIRST message (Conversation turns = 0) → call say() introducing yourself as RailSaarthi and asking where they want to travel — RESPOND IN ${detectedLang.name}.
+• User says any greeting AND this is the FIRST message (Conversation turns = 0) → call say() introducing yourself as RailSaarthi and asking where they want to travel — RESPOND IN ${lang.name}.
 • If turns > 0 and user says something greeting-like: do NOT repeat the welcome. Respond to what they actually need.
-• User complains about language ("Hindi mein baat karo", "speak in Hindi", "English mat bolo") → call say() acknowledging and switching — respond in the language they requested, not the detected language.
-• Unclear or off-topic input → call say() with a helpful clarifying question — RESPOND IN ${detectedLang.name}.
+• User asks to change language ("Hindi mein baat karo", "speak in English", "tamil la pesunga") → call say() telling them to use the language selector at the top of the page — respond in ${lang.name}.
+• Unclear or off-topic input → call say() with a helpful clarifying question — RESPOND IN ${lang.name}.
 • NEVER call search_trains, select_train, or any booking tool for greetings or chitchat.
-• User mentions two cities / "X se Y" / "X to Y" / "from X to Y" BUT no date → call say() asking for the travel date — RESPOND IN ${detectedLang.name}.
+• User mentions two cities / "X se Y" / "X to Y" / "from X to Y" BUT no date → call say() asking for the travel date — RESPOND IN ${lang.name}.
 • User mentions two cities AND a date → call search_trains immediately. No extra confirmation needed.
 • NEVER call search_trains unless the user has provided BOTH: (1) source city, (2) destination city, AND (3) a travel date.
 • User says a train number or "pehli/doosri/teesri train" / "first/second/third train" → call select_train.
@@ -50,7 +51,7 @@ DEFAULT CLASS: SL/Sleeper (use this automatically — do NOT ask user for class 
 • User says "haan" / "yes" / "confirm" on REVIEW screen → call confirm_booking.
 • User says "nahi" / "no" / "cancel" on review screen → call cancel_booking.
 • User says "meri tickets" / "my bookings" / "booked tickets" → call show_my_bookings.
-• User says "band karo" / "stop" / "goodbye" / "bye" → call say() with a farewell — RESPOND IN ${detectedLang.name}.
+• User says "band karo" / "stop" / "goodbye" / "bye" → call say() with a farewell — RESPOND IN ${lang.name}.
 
 == BOOKING FLOW — DO NOT SKIP STEPS ==
 Booking only completes after: (1) passenger_form filled by user, (2) review screen, (3) payment screen, (4) user pays.
@@ -68,13 +69,16 @@ Booking only completes after: (1) passenger_form filled by user, (2) review scre
 • User can also fill the form manually on screen — both methods are valid.
 
 == CITY NAME MAPPING (pass raw user text to search_trains — system normalizes automatically) ==
-दिल्ली = Delhi = Dilli = New Delhi | मुंबई = Mumbai = Bambai | लखनऊ = Lucknow
-प्रयागराज = Prayagraj = Allahabad = Ilahabaad | बल्लिया = Ballia
+New Delhi = Delhi = दिल्ली = नई दिल्ली = புது தில்லி = નવી દિલ્હી = নয়াদিল্লি | Mumbai = Bambai = मुंबई = மும்பை = મુંબઈ = মুম্বই
+Lucknow = लखनऊ = लखनौ = લખનૌ = লখনউ = லக்னோ | Prayagraj = Allahabad = प्रयागराज = பிரயாக்ராஜ் = પ્રયાગરાજ = প্রয়াগরাজ
+Ballia = बलिया = बल्लिया = பலியா = બલિયા = বালিয়া
+When speaking city names in replies, use the ${lang.name} spelling.
 
 == RESPONSE STYLE ==
-• Detected language: ${detectedLang.name} (${detectedLang.code}). ALWAYS respond in ${detectedLang.name}. Match the language the user spoke exactly. If they spoke Hindi → Hindi. English → English. Gujarati → Gujarati. Hinglish (Hindi+English mix) is fine for Hindi speakers.
+• The user selected ${lang.name} (${lang.code}) in the app. Write EVERY spoken reply (say text) ONLY in ${lang.name}, in its native script. Never answer in another language, even if the user speaks a different one — the user switches language with the app's language selector. Common English loanwords (train, ticket, SL, AC) are fine.
+• Tool arguments stay in English / fixed enums: travel_class SL/3A/2A/1A, gender M/F/T, dates YYYY-MM-DD, station names as the user said them. Only the say() text is in ${lang.name}.
 • Max 1-2 sentences. This is voice output — be brief.
-• After search_trains tool result: announce the number of trains found and ask which one they prefer — RESPOND IN ${detectedLang.name}.
+• After search_trains tool result: announce the number of trains found and ask which one they prefer — RESPOND IN ${lang.name}.
 • Never invent train data. Use TRAINS ON SCREEN below — it contains fares and availability for each class.
 • If user asks "cheapest/sasti", compare SL fares across all trains and name the one with the lowest ₹ fare.
 • If user asks "fastest/tez", compare duration and name the shortest one.
@@ -92,13 +96,20 @@ Conversation turns so far: ${conversationTurns} — ${conversationTurns === 0 ? 
 ${trainsOnScreen.length > 0 ? JSON.stringify(trainsOnScreen) : 'none yet'}`;
 }
 
-const STOP_PHRASES = ['band karo', 'rok do', 'stop', 'bahar jao', 'band ho jao', 'rukk jao', 'bas karo'];
-function wantsToStop(text) {
+const GREETING_DELAY_MS = 900; // > STT CALIBRATION_MS (700) in useSarvamSTT.js
+
+function wantsToStop(text, langCode) {
   const lower = text.toLowerCase();
-  return STOP_PHRASES.some((p) => lower.includes(p));
+  const phrases = translate(langCode, 'voice.stopPhrases').split(',');
+  return phrases.some((p) => p.trim() && lower.includes(p.trim().toLowerCase()));
 }
 
 export default function useVoiceFlow(state, dispatch, setErrorMsg) {
+  const { lang, t } = useLanguage();
+  // The selector in the header is the source of truth for the conversation language.
+  const langRef = useRef(lang);
+  langRef.current = lang;
+
   const stateRef = useRef(state);
   stateRef.current = state;
 
@@ -113,9 +124,6 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
   const [voiceStatus, setVoiceStatus] = useState('idle');
   // Generation counter: incremented on interruption; stale async chains check and bail early
   const processGenRef = useRef(0);
-
-  const detectedLangRef = useRef(DEFAULT_LANG);
-  const [detectedLanguage, setDetectedLanguage] = useState(DEFAULT_LANG);
 
   const pushStep = useCallback((step) => {
     setThinkingStep(step);
@@ -165,30 +173,10 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
     dispatch({ type: 'SET_VOICE_STATE', voiceState: { lastUserText: transcript, isProcessing: true } });
     setInterimTranscript('');
 
-    // Detect language — only switch if the transcript has enough signal.
-    // Short inputs like "Okay.", "Yes", "35" are too ambiguous to reliably
-    // identify language and would flip context incorrectly.
-    const lang = detectLanguage(transcript);
-    const wordCount = transcript.trim().split(/\s+/).length;
-    const hasEnoughSignal = wordCount >= 3;
-    if (lang.code !== detectedLangRef.current.code && hasEnoughSignal) {
-      detectedLangRef.current = lang;
-      setDetectedLanguage(lang);
-      log('language_detected', { code: lang.code, name: lang.name });
-    }
-
-    if (wantsToStop(transcript)) {
+    if (wantsToStop(transcript, langRef.current.code)) {
       clearThinking();
-      const lang = detectedLangRef.current;
-      const byeText = lang.code === 'en-IN'
-        ? 'Okay, shutting down. Have a great journey!'
-        : lang.code === 'gu-IN'
-        ? 'ઠીક છે, બંધ થઈ રહ્યો છું. શુભ યાત્રા!'
-        : lang.code === 'pa-IN'
-        ? 'ਠੀਕ ਹੈ, ਬੰਦ ਹੋ ਰਿਹਾ ਹਾਂ। ਸ਼ੁਭ ਯਾਤਰਾ!'
-        : lang.code === 'bn-IN'
-        ? 'ঠিক আছে, বন্ধ হচ্ছি। শুভ যাত্রা!'
-        : 'Theek hai, main band ho raha hoon. Shubh yatra!';
+      const lang = langRef.current;
+      const byeText = translate(lang.code, 'voice.bye');
       dispatch({ type: 'SET_VOICE_STATE', voiceState: { isProcessing: false, lastAssistantText: byeText, isSpeaking: true } });
       setVoiceStatus('bot_speaking');
       await tts.speak(byeText, lang.code);
@@ -199,7 +187,7 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
 
     const currentState = stateRef.current;
     const conversationTurns = Math.floor(historyRef.current.length / 2);
-    const systemPrompt = buildSystemPrompt(currentState, detectedLangRef.current, conversationTurns);
+    const systemPrompt = buildSystemPrompt(currentState, langRef.current, conversationTurns);
     const userMessage = { role: 'user', content: transcript };
     const messages = [
       { role: 'system', content: systemPrompt },
@@ -275,8 +263,8 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
             let match;
             while ((match = sentRegex.exec(newPart)) !== null) {
               const sentence = match[1].trim();
-              if (sentence && /[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(sentence)) {
-                const sLang = detectLanguage(sentence);
+              if (sentence && SPEAKABLE_RE.test(sentence)) {
+                const sLang = langRef.current;
                 log('tts', { text: sentence, lang: sLang.code, model: 'bulbul:v3', streaming: true });
                 tts.enqueueSentence(sentence, sLang.code);
                 streamedAnySentence = true;
@@ -308,8 +296,8 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
 
           // Enqueue any trailing text after the last sentence boundary (e.g. fragment without punctuation)
           const trailingText = (streamExtractedText || spokenText).slice(sentenceOffset).trim();
-          if (trailingText && /[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(trailingText)) {
-            const sLang = detectLanguage(trailingText);
+          if (trailingText && SPEAKABLE_RE.test(trailingText)) {
+            const sLang = langRef.current;
             tts.enqueueSentence(trailingText, sLang.code);
             streamedAnySentence = true;
           }
@@ -326,7 +314,7 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
         // (model sometimes outputs JSON like '[{"name":"search_trains",...}]' as plain text)
         const isStringifiedToolCall = /^\s*[\[{]/.test(rawContent) && /"name"\s*:/.test(rawContent);
         const looksLikeMalformed = !rawContent
-          || !/[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(rawContent)
+          || !SPEAKABLE_RE.test(rawContent)
           || isStringifiedToolCall;
 
         if (looksLikeMalformed) {
@@ -411,7 +399,7 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
       }
 
       // Guard: only speak if text has actual Hindi/English letters (reject "[", "{", etc.)
-      if (spokenText && !/[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(spokenText)) {
+      if (spokenText && !SPEAKABLE_RE.test(spokenText)) {
         console.warn('[VoiceFlow] Discarding garbage spoken_text:', JSON.stringify(spokenText));
         spokenText = '';
       }
@@ -431,8 +419,8 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
       if (spokenText) {
         // If no sentences were streamed yet (direct say path or streaming fallback),
         // enqueue the full text now so waitForQueue has something to play.
-        if (!streamedAnySentence && /[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(spokenText)) {
-          const responseLang = detectLanguage(spokenText);
+        if (!streamedAnySentence && SPEAKABLE_RE.test(spokenText)) {
+          const responseLang = langRef.current;
           log('tts', { text: spokenText, lang: responseLang.code, model: 'bulbul:v3' });
           tts.enqueueSentence(spokenText, responseLang.code);
         }
@@ -449,14 +437,14 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
       log('error', { phase: 'llm_or_tts', message: err?.message || String(err) });
       clearThinking();
       dispatch({ type: 'SET_VOICE_STATE', voiceState: { isProcessing: false, isSpeaking: false } });
-      setErrorMsg?.('Thodi problem hui. Dobara bolein.');
+      setErrorMsg?.(t('voice.errGeneric'));
       setVoiceStatus('listening');
     }
   };
 
   // STT hook: callbacks drive the pipeline
   const stt = useSarvamSTT({
-    languageCode: detectedLanguage.code,
+    languageCode: lang.code,
     onSpeechStart: () => {
       // Always stop TTS — user may be interrupting bot speech.
       tts.stop();
@@ -489,6 +477,22 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
     dispatch({ type: 'SET_VOICE_STATE', voiceState: { isRecording: false, isProcessing: false, isSpeaking: false } });
   };
 
+  // Language switched from the header selector: drop in-flight audio/LLM work and old-language
+  // history (it would bias the model), then re-greet if a conversation is live.
+  const prevLangRef = useRef(lang.code);
+  useEffect(() => {
+    if (prevLangRef.current === lang.code) return;
+    prevLangRef.current = lang.code;
+    tts.stop();
+    processGenRef.current++;
+    pendingTranscriptRef.current = null;
+    historyRef.current = [];
+    clearThinking();
+    if (!isConversationActiveRef.current) return;
+    setVoiceStatus('listening');
+    speakAnnouncement(translate(lang.code, 'voice.greeting'));
+  }, [lang.code]);
+
   // ── public API ───────────────────────────────────────────────────────────
   const startConversation = async () => {
     if (isConversationActiveRef.current) return;
@@ -496,12 +500,28 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
     setIsConversationActive(true);
     setVoiceStatus('connecting');
 
+    log('conversation_start', { screen: stateRef.current.screen });
+
     try {
       await stt.startListening();
-    } catch {
-      setErrorMsg?.('Microphone use nahi ho pa raha. Permission check karein.');
+    } catch (err) {
+      log('error', { phase: 'mic_start', message: err?.message || String(err) });
+      setErrorMsg?.(t('voice.errMic'));
       _stopConversation();
+      return;
     }
+    if (!isConversationActiveRef.current) return; // stopped while connecting
+
+    log('mic_ready', {});
+    setVoiceStatus('listening');
+
+    // Let the STT noise-floor calibration finish first so the greeting isn't measured as ambient noise.
+    await new Promise((r) => setTimeout(r, GREETING_DELAY_MS));
+    if (!isConversationActiveRef.current || stt.status === 'user_speaking') return;
+
+    const greeting = translate(langRef.current.code, 'voice.greeting');
+    log('tts', { text: greeting, lang: langRef.current.code, model: 'bulbul:v3', phase: 'welcome' });
+    await speakAnnouncement(greeting);
   };
 
   const stopConversation = () => _stopConversation();
@@ -512,7 +532,7 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
     if (stt.status === 'user_speaking') return;
     setVoiceStatus('bot_speaking');
     dispatch({ type: 'SET_VOICE_STATE', voiceState: { lastAssistantText: text, isSpeaking: true } });
-    await tts.speak(text, detectedLangRef.current.code);
+    await tts.speak(text, langRef.current.code);
     dispatch({ type: 'SET_VOICE_STATE', voiceState: { isSpeaking: false } });
     if (isConversationActiveRef.current && stt.status !== 'user_speaking') {
       setVoiceStatus('listening');
@@ -527,7 +547,6 @@ export default function useVoiceFlow(state, dispatch, setErrorMsg) {
     thinkingStep,
     thinkingSteps,
     isSpeaking: tts.isSpeaking,
-    detectedLanguage,
     startConversation,
     stopConversation,
     speakAnnouncement,

@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { SPEAKABLE_RE } from '../i18n/languages.js';
 
 const API_KEY = import.meta.env.VITE_SARVAM_API_KEY;
 
@@ -9,8 +10,9 @@ const LANG_TTS_CONFIG = {
   'hi-IN': { speaker: 'priya', target_language_code: 'hi-IN' },
   'en-IN': { speaker: 'priya', target_language_code: 'en-IN' },
   'gu-IN': { speaker: 'priya', target_language_code: 'gu-IN' },
-  'pa-IN': { speaker: 'priya', target_language_code: 'pa-IN' },
   'bn-IN': { speaker: 'priya', target_language_code: 'bn-IN' },
+  'ta-IN': { speaker: 'priya', target_language_code: 'ta-IN' },
+  'mr-IN': { speaker: 'priya', target_language_code: 'mr-IN' },
 };
 
 export default function useSarvamTTS() {
@@ -86,7 +88,7 @@ export default function useSarvamTTS() {
   // Audio fetch starts IMMEDIATELY (parallel with current playback).
   // Playback is sequential: this sentence plays after the previous one finishes.
   const enqueueSentence = (text, langCode = 'hi-IN') => {
-    if (!text || !API_KEY || !/[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(text)) return;
+    if (!text || !API_KEY || !SPEAKABLE_RE.test(text)) return;
     const myGen = genRef.current;
     // Start fetching audio RIGHT NOW — don't wait for previous sentence to finish
     const audioPromise = _fetchAudio(text, langCode, myGen);
@@ -108,7 +110,7 @@ export default function useSarvamTTS() {
   // Legacy single-text speak (used for announcements and short one-off phrases).
   // Stops any current audio before playing.
   const speak = async (text, langCode = 'hi-IN') => {
-    if (!text || !API_KEY || !/[a-zA-Zऀ-ॿ઀-૿ਁ-੿ঀ-৿]/.test(text)) return;
+    if (!text || !API_KEY || !SPEAKABLE_RE.test(text)) return;
     stop();
     const myGen = genRef.current;
     const url = await _fetchAudio(text, langCode, myGen);

@@ -196,7 +196,7 @@ export const TOOL_DEFINITIONS = [
         properties: {
           text: {
             type: 'string',
-            description: 'Hindi or Hinglish text to speak aloud to the user. Max 2 sentences. Be helpful and friendly.',
+            description: 'Text to speak aloud to the user, written ONLY in the language named in the system prompt (RESPOND ONLY IN ...), in its native script. Max 2 sentences. Be helpful and friendly.',
           },
         },
         required: ['text'],
