@@ -10,7 +10,7 @@ export default {
         'irctc-bg': '#f0f2f5',
       },
       fontFamily: {
-        sans: ["'Segoe UI'", 'system-ui', 'sans-serif'],
+        sans: ["'Segoe UI'", "'Noto Sans'", "'Noto Sans Devanagari'", "'Noto Sans Tamil'", "'Noto Sans Gujarati'", "'Noto Sans Bengali'", 'system-ui', 'sans-serif'],
       },
     },
   },
