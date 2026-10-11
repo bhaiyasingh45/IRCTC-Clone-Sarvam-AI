@@ -1,4 +1,7 @@
-export default function VoiceStatusBar({ voiceState, detectedLanguage, isConversationActive }) {
+import { useLanguage } from '../i18n/LanguageContext.jsx';
+
+export default function VoiceStatusBar({ voiceState }) {
+  const { t } = useLanguage();
   const { isRecording, isProcessing, isSpeaking, lastUserText, lastAssistantText } = voiceState;
 
   const statusColor = isRecording
@@ -16,12 +19,12 @@ export default function VoiceStatusBar({ voiceState, detectedLanguage, isConvers
           {isRecording ? (
             <>
               <span className="text-red-500 animate-pulse">🔴</span>
-              <span className="text-red-600 font-medium">Recording...</span>
+              <span className="text-red-600 font-medium">{t('voice.recording')}</span>
             </>
           ) : isProcessing ? (
             <>
               <span className="animate-spin text-yellow-600">⟳</span>
-              <span className="text-yellow-700 font-medium">Samajh raha hoon...</span>
+              <span className="text-yellow-700 font-medium">{t('voice.understanding')}</span>
             </>
           ) : lastUserText ? (
             <>
@@ -31,17 +34,12 @@ export default function VoiceStatusBar({ voiceState, detectedLanguage, isConvers
           ) : (
             <>
               <span className="text-blue-400">🎤</span>
-              <span className="text-gray-400">Bolne ke liye mic dabayein</span>
+              <span className="text-gray-400">{t('voice.tapMic')}</span>
             </>
           )}
         </div>
 
         <div className="flex items-center gap-3 min-w-0">
-          {isConversationActive && detectedLanguage && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-xs text-gray-600 font-medium shrink-0">
-              🌐 {detectedLanguage.label}
-            </span>
-          )}
           {lastAssistantText && (
             <div className="flex items-center gap-2 text-gray-700 min-w-0 max-w-lg">
               {isSpeaking ? (

@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 // Status label and color per voiceStatus
 const STATUS_CONFIG = {
-  idle:          { text: 'Baat karne ke liye tap karein',  color: '#94a3b8' },
-  connecting:    { text: 'Jud rahi hoon...',               color: '#facc15' },
-  listening:     { text: 'Sun rahi hoon...',               color: '#4ade80' },
-  user_speaking: { text: null /* shows interim transcript */, color: '#f97316' },
-  processing:    { text: 'Soch rahi hoon...',              color: '#818cf8' },
-  bot_speaking:  { text: null /* shows assistant text */,  color: '#38bdf8' },
+  idle:          { key: 'voice.idle',       color: '#94a3b8' },
+  connecting:    { key: 'voice.connecting', color: '#facc15' },
+  listening:     { key: 'voice.listening',  color: '#4ade80' },
+  user_speaking: { key: null /* shows interim transcript */, color: '#f97316' },
+  processing:    { key: 'voice.processing', color: '#818cf8' },
+  bot_speaking:  { key: null /* shows assistant text */,     color: '#38bdf8' },
 };
 
 const BAR_COUNT = 9;
@@ -24,6 +25,7 @@ export default function VoiceAssistant({
   onStart,
   onStop,
 }) {
+  const { t } = useLanguage();
   const barsRef = useRef(null);
   const rafRef = useRef(null);
   const tRef = useRef(0);
@@ -88,10 +90,10 @@ export default function VoiceAssistant({
       ? interimTranscript
       : voiceStatus === 'bot_speaking' && lastAssistantText
       ? lastAssistantText
-      : cfg.text
-      ? cfg.text
+      : cfg.key
+      ? t(cfg.key)
       : voiceStatus === 'user_speaking'
-      ? 'Bol raha hoon...'
+      ? t('voice.userSpeaking')
       : lastAssistantText || '';
 
   return (
@@ -160,24 +162,24 @@ export default function VoiceAssistant({
               onClick={onStop}
               className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-full transition-all"
               style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
-              title="Conversation band karein"
+              title={t('voice.stopTitle')}
             >
               <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
                 <rect x="4" y="4" width="16" height="16" rx="3" />
               </svg>
-              Band karo
+              {t('voice.stop')}
             </button>
           ) : (
             <button
               onClick={onStart}
               className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full transition-all hover:scale-105"
               style={{ background: '#1a56db', color: '#fff' }}
-              title="Voice assistant shuru karein"
+              title={t('voice.startTitle')}
             >
               <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                 <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm0 2a2 2 0 0 0-2 2v6a2 2 0 0 0 4 0V5a2 2 0 0 0-2-2zm-7 9a7 7 0 0 0 14 0h2a9 9 0 0 1-8 8.94V23h-2v-2.06A9 9 0 0 1 3 12h2z" />
               </svg>
-              Baat karo
+              {t('voice.start')}
             </button>
           )}
         </div>

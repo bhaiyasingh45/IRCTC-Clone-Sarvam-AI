@@ -1,85 +1,87 @@
+import { useLanguage } from '../i18n/LanguageContext.jsx';
+
 const STEP_CONFIG = {
   transcribing: {
     icon: '🎙️',
-    label: 'Awaaz samajh raha hoon...',
+    labelKey: 'think.stt',
     color: 'text-blue-400',
     bg: 'bg-blue-500/10 border-blue-500/30',
   },
   thinking: {
     icon: '🧠',
-    label: 'Soch raha hoon...',
+    labelKey: 'think.thinking',
     color: 'text-purple-400',
     bg: 'bg-purple-500/10 border-purple-500/30',
   },
   tool_search_trains: {
     icon: '🚆',
-    label: 'Trains dhundh raha hoon...',
+    labelKey: 'think.search',
     color: 'text-orange-400',
     bg: 'bg-orange-500/10 border-orange-500/30',
   },
   tool_select_train: {
     icon: '🎯',
-    label: 'Train select kar raha hoon...',
+    labelKey: 'think.select',
     color: 'text-green-400',
     bg: 'bg-green-500/10 border-green-500/30',
   },
   tool_initiate_booking: {
     icon: '📋',
-    label: 'Booking form khol raha hoon...',
+    labelKey: 'think.booking',
     color: 'text-yellow-400',
     bg: 'bg-yellow-500/10 border-yellow-500/30',
   },
   tool_confirm_booking: {
     icon: '✅',
-    label: 'Booking confirm kar raha hoon...',
+    labelKey: 'think.confirm',
     color: 'text-green-400',
     bg: 'bg-green-500/10 border-green-500/30',
   },
   tool_go_back: {
     icon: '↩️',
-    label: 'Wapis ja raha hoon...',
+    labelKey: 'think.back',
     color: 'text-slate-400',
     bg: 'bg-slate-500/10 border-slate-500/30',
   },
   tool_reset_search: {
     icon: '🔄',
-    label: 'Naya search shuru kar raha hoon...',
+    labelKey: 'think.reset',
     color: 'text-blue-400',
     bg: 'bg-blue-500/10 border-blue-500/30',
   },
   tool_scroll_screen: {
     icon: '📜',
-    label: 'Screen scroll kar raha hoon...',
+    labelKey: 'think.scroll',
     color: 'text-slate-400',
     bg: 'bg-slate-500/10 border-slate-500/30',
   },
   tool_change_search_params: {
     icon: '✏️',
-    label: 'Search update kar raha hoon...',
+    labelKey: 'think.update',
     color: 'text-yellow-400',
     bg: 'bg-yellow-500/10 border-yellow-500/30',
   },
   tool_cancel_booking: {
     icon: '❌',
-    label: 'Booking cancel kar raha hoon...',
+    labelKey: 'think.cancel',
     color: 'text-red-400',
     bg: 'bg-red-500/10 border-red-500/30',
   },
   tool_select_class: {
     icon: '💺',
-    label: 'Class badal raha hoon...',
+    labelKey: 'think.class',
     color: 'text-blue-400',
     bg: 'bg-blue-500/10 border-blue-500/30',
   },
   tool_get_train_details: {
     icon: '🔍',
-    label: 'Train ki details la raha hoon...',
+    labelKey: 'think.details',
     color: 'text-blue-400',
     bg: 'bg-blue-500/10 border-blue-500/30',
   },
   responding: {
     icon: '💬',
-    label: 'Jawab bana raha hoon...',
+    labelKey: 'think.responding',
     color: 'text-indigo-400',
     bg: 'bg-indigo-500/10 border-indigo-500/30',
   },
@@ -136,6 +138,7 @@ function ThinkingDots() {
 }
 
 export default function ThinkingPanel({ thinkingStep, steps }) {
+  const { t } = useLanguage();
   if (!thinkingStep) return null;
 
   const config = STEP_CONFIG[thinkingStep];
@@ -158,7 +161,7 @@ export default function ThinkingPanel({ thinkingStep, steps }) {
 
         {/* Label + inline animation */}
         <div className="flex items-center gap-2">
-          <span className={`text-sm font-medium ${config.color}`}>{config.label}</span>
+          <span className={`text-sm font-medium ${config.color}`}>{t(config.labelKey)}</span>
 
           {isThinkingOrResponding ? (
             <ThinkingDots />
@@ -175,7 +178,7 @@ export default function ThinkingPanel({ thinkingStep, steps }) {
             {steps.slice(0, -1).map((s, i) => {
               const c = STEP_CONFIG[s];
               return c ? (
-                <span key={i} className="text-xs opacity-50" title={c.label}>
+                <span key={i} className="text-xs opacity-50" title={t(c.labelKey)}>
                   {c.icon}
                 </span>
               ) : null;

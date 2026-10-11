@@ -13,6 +13,8 @@ import SuccessScreen from './components/screens/SuccessScreen.jsx';
 import MyBookingsScreen from './components/screens/MyBookingsScreen.jsx';
 import useVoiceFlow from './hooks/useVoiceFlow.js';
 import ThinkingPanel from './components/ThinkingPanel.jsx';
+import { useLanguage } from './i18n/LanguageContext.jsx';
+import { stationLabel } from './i18n/helpers.js';
 
 const initialState = {
   screen: 'home',
@@ -100,6 +102,7 @@ function appReducer(state, action) {
 export default function App() {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const [errorMsg, setErrorMsg] = useState(null);
+  const { t } = useLanguage();
 
   const voice = useVoiceFlow(state, dispatch, setErrorMsg);
   const prevScreenRef = useRef(state.screen);
@@ -112,15 +115,19 @@ export default function App() {
     if (prev === cur) return;
 
     const ANNOUNCEMENTS = {
-      passenger_form: `${state.selectedTrain?.train_name || 'Train'} ke liye passenger details bhar dijiye. Naam, age, aur gender form mein enter karein. Sab passengers add karne ke baad "Proceed to Review" button dabaein.`,
-      review: 'Aapki booking details check karein. Sab sahi ho toh "Confirm and Pay" button dabaein ya "Haan" bolein.',
-      payment: `Payment karein. Total amount hai rupaye ${state.totalFare}. UPI ya card se pay kar sakte hain.`,
+      passenger_form: t('announce.passenger_form', { train: state.selectedTrain?.train_name || '' }),
+      review: t('announce.review'),
+      payment: t('announce.payment', { amount: state.totalFare }),
       train_list: state.searchResults.length > 0
-        ? `${state.searchResults.length} trains mili hain ${state.searchParams.source} se ${state.searchParams.destination} ke liye. Koi bhi train select karein.`
+        ? t('announce.train_list', {
+            count: state.searchResults.length,
+            from: stationLabel(t, state.searchParams.source),
+            to: stationLabel(t, state.searchParams.destination),
+          })
         : null,
       my_bookings: state.bookings.length > 0
-        ? `Aapki ${state.bookings.length} booking${state.bookings.length > 1 ? 'en' : ''} hain.`
-        : 'Abhi tak koi booking nahi hui hai.',
+        ? t('announce.my_bookings', { count: state.bookings.length })
+        : t('announce.my_bookings_none'),
     };
 
     const text = ANNOUNCEMENTS[cur];
@@ -147,7 +154,7 @@ export default function App() {
   return (
     <div className="min-h-screen font-sans flex flex-col relative overflow-x-hidden pt-[60px]" style={{ background: '#f4f6fa' }}>
       <Header />
-      <VoiceStatusBar voiceState={state.voiceState} detectedLanguage={voice.detectedLanguage} isConversationActive={voice.isConversationActive} />
+      <VoiceStatusBar voiceState={state.voiceState} />
 
       {errorMsg && (
         <div
