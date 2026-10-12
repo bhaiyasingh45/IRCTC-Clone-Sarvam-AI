@@ -196,11 +196,12 @@ export default function HomeScreen({ state, dispatch }) {
                 <div className="flex-1" style={{ background: '#138808' }} />
               </div>
 
-              <div className="absolute inset-0 flex items-center pl-10 pr-6">
-                <div className="text-white max-w-sm">
+              {/* Text is confined to the dark left half so it never runs over the train image */}
+              <div className="absolute inset-y-0 left-0 flex items-center pl-10 pr-3" style={{ width: '54%' }}>
+                <div className="text-white min-w-0 w-full" style={{ overflowWrap: 'anywhere' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-4xl">🎤</span>
-                    <h1 className="text-3xl font-extrabold leading-tight tracking-tight">
+                    <span className="text-3xl flex-shrink-0">🎤</span>
+                    <h1 className="text-2xl xl:text-3xl font-extrabold leading-tight tracking-tight min-w-0">
                       {t('home.heroLine1')}<br />{t('home.heroLine2')}
                     </h1>
                   </div>
