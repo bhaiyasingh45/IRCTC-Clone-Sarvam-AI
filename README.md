@@ -113,7 +113,7 @@ src/
 │   ├── ThinkingPanel.jsx       # AI reasoning steps display
 │   └── screens/
 │       ├── HomeScreen.jsx      # Landing page with search + destination carousel
-│       ├── TrainListScreen.jsx # Search results with filters
+│       ├── TrainListScreen.jsx # Search results with filters and sorting
 │       ├── TrainDetailScreen.jsx
 │       ├── PassengerFormScreen.jsx
 │       ├── ReviewScreen.jsx
