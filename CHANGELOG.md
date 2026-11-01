@@ -7,9 +7,10 @@ All notable changes to this project are recorded here, newest first.
 ### Added
 - Train list: sort results by departure time, duration or fare (fare uses the searched
   class, falling back to the cheapest class). Label translated into all six languages.
+- `run.sh` helper script to free the port, install dependencies and start the dev server.
 
 ### Changed
-- README mentions the sort control.
+- README mentions the sort control and documents `run.sh`.
 
 ## 2026-10 — Multilingual UI
 
