@@ -66,6 +66,14 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
+Or use the helper script, which kills anything already on the port, installs
+dependencies if needed, and starts the dev server:
+
+```bash
+./run.sh          # port 5173
+./run.sh 3000     # custom port
+```
+
 ### Build for Production
 
 ```bash
