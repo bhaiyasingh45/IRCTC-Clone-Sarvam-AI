@@ -21,6 +21,7 @@ export default function TrainListScreen({ state, dispatch }) {
   const [filterAvail, setFilterAvail] = useState(false);
   const [filterClasses, setFilterClasses] = useState([]);
   const [filterTime, setFilterTime] = useState([]);
+  const [sortBy, setSortBy] = useState('default');
 
   const stationOptions = Object.values(STATIONS);
 
@@ -53,7 +54,21 @@ export default function TrainListScreen({ state, dispatch }) {
 
   const getHour = (timeStr) => parseInt(timeStr.split(':')[0], 10);
 
-  let filtered = searchResults.filter((tr) => {
+  const durationMins = (d) => {
+    const m = /(\d+)h\s*(?:(\d+)m)?/.exec(d || '');
+    return m ? parseInt(m[1], 10) * 60 + parseInt(m[2] || '0', 10) : Infinity;
+  };
+  const fareFor = (tr) => {
+    const fares = Object.values(tr.classes).map((c) => c.fare);
+    return tr.classes[searchParams.travelClass]?.fare ?? Math.min(...fares);
+  };
+  const SORTERS = {
+    departure: (a, b) => a.departure.localeCompare(b.departure),
+    duration: (a, b) => durationMins(a.duration) - durationMins(b.duration),
+    fare: (a, b) => fareFor(a) - fareFor(b),
+  };
+
+  const filtered = searchResults.filter((tr) => {
     if (filterAvail && Object.values(tr.classes).every((c) => c.availability !== 'AVAILABLE')) return false;
     if (filterClasses.length > 0 && !filterClasses.some((cls) => tr.classes[cls])) return false;
     if (filterTime.length > 0) {
@@ -66,6 +81,7 @@ export default function TrainListScreen({ state, dispatch }) {
     }
     return true;
   });
+  if (SORTERS[sortBy]) filtered.sort(SORTERS[sortBy]);
 
   return (
     <div className="max-w-screen-xl mx-auto px-6 py-6">
@@ -167,10 +183,22 @@ export default function TrainListScreen({ state, dispatch }) {
             <h2 className="text-navy font-bold text-lg">
               {stationLabel(t, searchParams.source)} → {stationLabel(t, searchParams.destination)}
             </h2>
-            <p className="text-sm text-slate-500">
-              {t('list.found', { n: filtered.length })}
-              {searchParams.date && ` · ${formatDate(lang, searchParams.date)}`}
-            </p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-slate-500">
+                {t('list.found', { n: filtered.length })}
+                {searchParams.date && ` · ${formatDate(lang, searchParams.date)}`}
+              </p>
+              <label className="flex items-center gap-2 text-xs text-slate-500">
+                {t('list.sort')}
+                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
+                  className="h-8 border border-slate-300 rounded px-2 text-sm text-navy bg-white focus:outline-none focus:border-navy">
+                  <option value="default">{t('list.sortDefault')}</option>
+                  <option value="departure">{t('list.sortDep')}</option>
+                  <option value="duration">{t('list.sortDur')}</option>
+                  <option value="fare">{t('list.sortFare')}</option>
+                </select>
+              </label>
+            </div>
           </div>
 
           {filtered.length === 0 ? (
