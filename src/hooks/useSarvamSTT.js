@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 
-const API_KEY = import.meta.env.VITE_SARVAM_API_KEY;
 const SAMPLE_RATE = 16000;
 
 // Adaptive VAD — calibrates to ambient noise on startup
@@ -80,9 +79,8 @@ export default function useSarvamSTT({ onSpeechStart, onTranscript, onAudioLevel
     formData.append('mode', 'codemix');
 
     try {
-      const res = await fetch('https://api.sarvam.ai/speech-to-text', {
+      const res = await fetch('/api/stt', {
         method: 'POST',
-        headers: { 'api-subscription-key': API_KEY },
         body: formData,
       });
       if (!res.ok) { console.error('[STT] REST error:', res.status, await res.text()); }

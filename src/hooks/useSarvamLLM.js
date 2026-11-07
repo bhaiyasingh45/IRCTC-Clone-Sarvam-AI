@@ -1,6 +1,5 @@
 import { useState } from 'react';
 
-const API_KEY = import.meta.env.VITE_SARVAM_API_KEY;
 
 export default function useSarvamLLM() {
   const [isLoading, setIsLoading] = useState(false);
@@ -33,11 +32,10 @@ export default function useSarvamLLM() {
       }
       // If no tools provided, omit tools + tool_choice entirely → text response only
 
-      const res = await fetch('https://api.sarvam.ai/v1/chat/completions', {
+      const res = await fetch('/api/llm', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'api-subscription-key': API_KEY,
         },
         body: JSON.stringify(body),
       });
@@ -81,9 +79,9 @@ export default function useSarvamLLM() {
       };
       if (tools?.length) { body.tools = tools; body.tool_choice = toolChoice; }
 
-      const res = await fetch('https://api.sarvam.ai/v1/chat/completions', {
+      const res = await fetch('/api/llm', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'api-subscription-key': API_KEY },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(`LLM HTTP ${res.status}`);
