@@ -32,6 +32,7 @@ A voice-first Indian Railway ticket booking demo built with React and Sarvam AI.
 | AI — LLM | Sarvam AI Language Model |
 | AI — TTS | Sarvam AI Text-to-Speech |
 | State | React `useReducer` |
+| API proxy | Node `http` + `fetch` (no dependencies), `server/index.js` |
 
 ---
 
@@ -52,34 +53,57 @@ npm install
 
 ### Environment Setup
 
-Create a `.env` file in the project root:
+Copy `.env.example` to `.env` in the project root and set your key:
 
 ```env
-VITE_SARVAM_API_KEY=your_sarvam_api_key_here
+SARVAM_API_KEY=your_sarvam_api_key_here
 ```
+
+The key is read only by the API proxy (`server/index.js`), never by the browser. The older
+name `VITE_SARVAM_API_KEY` still works but prints a warning — rename it, because Vite exposes
+`VITE_*` variables to client code.
 
 ### Run Development Server
 
+The easiest way is the helper script. It frees both ports, installs dependencies if needed,
+and starts the API proxy (port 8787) and the dev server together:
+
 ```bash
-npm run dev
+./run.sh          # app on 5173, proxy on 8787
+./run.sh 3000     # custom app port; set API_PORT=... for a custom proxy port
+```
+
+Or run the two processes yourself in separate terminals:
+
+```bash
+npm run server    # Sarvam API proxy on http://127.0.0.1:8787
+npm run dev       # app on http://localhost:5173
 ```
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-Or use the helper script, which kills anything already on the port, installs
-dependencies if needed, and starts the dev server:
+### API proxy
 
-```bash
-./run.sh          # port 5173
-./run.sh 3000     # custom port
-```
+The browser never talks to Sarvam directly. It calls `/api/stt`, `/api/llm` and `/api/tts`;
+Vite forwards `/api/*` to the proxy (`server.proxy` / `preview.proxy` in `vite.config.js`),
+which adds the `api-subscription-key` header and forwards to Sarvam. The proxy:
+
+- uses Node built-ins only (Node 20.12+), so there are no extra dependencies;
+- rate-limits per IP and route to Sarvam's Starter limits (STT 60, LLM 40, TTS 30 per minute) → `429`;
+- caps request bodies (STT 5 MB, LLM 512 KB, TTS 64 KB) → `413`;
+- pipes streamed LLM responses (SSE) through unchanged;
+- logs only route, status and duration — never audio, prompts or passenger details;
+- exposes `GET /api/health` → `{ ok, keyConfigured }`.
 
 ### Build for Production
 
 ```bash
 npm run build
+npm run server    # in another terminal — preview needs the proxy too
 npm run preview
 ```
+
+The built bundle in `dist/` contains no Sarvam host or key.
 
 ---
 
@@ -111,6 +135,11 @@ Logic always stays in English (station names, class codes `SL/3A/2A/1A`, gender 
 ## Project Structure
 
 ```
+server/
+└── index.js                    # Sarvam API proxy: holds the key, rate limits, streams SSE
+docs/
+├── plans/                      # Roadmaps and plans
+└── adr/                        # Architecture decision records
 src/
 ├── components/
 │   ├── Header.jsx              # Fixed top navigation bar
@@ -130,9 +159,9 @@ src/
 │       └── MyBookingsScreen.jsx
 ├── hooks/
 │   ├── useVoiceFlow.js         # Orchestrates the full voice booking flow
-│   ├── useSarvamLLM.js         # Sarvam LLM API integration
-│   ├── useSarvamTTS.js         # Sarvam TTS API integration
-│   └── useSarvamSTT.js         # Sarvam STT API integration (if applicable)
+│   ├── useSarvamLLM.js         # Sarvam LLM via /api/llm (proxy)
+│   ├── useSarvamTTS.js         # Sarvam TTS via /api/tts (proxy)
+│   └── useSarvamSTT.js         # Sarvam STT via /api/stt (proxy)
 ├── i18n/
 │   ├── languages.js            # The 6 supported languages + codes
 │   ├── LanguageContext.jsx     # Provider, useLanguage(), translate()
