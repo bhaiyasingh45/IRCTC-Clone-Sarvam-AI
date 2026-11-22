@@ -1,0 +1,6 @@
+{
+  "_comment": "Demo refund policy for cancelling a confirmed ticket. Edit here — no code change needed. The cancellation charge is per passenger and depends on the class; everything else is refunded.",
+  "cancellationChargePerPassenger": { "SL": 60, "3A": 120, "2A": 120, "1A": 120 },
+  "reservationFeeRefundable": true,
+  "timeBasedCharges": false
+}
