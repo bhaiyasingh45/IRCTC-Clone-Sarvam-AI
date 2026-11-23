@@ -44,6 +44,26 @@ function writeStore(entries) {
  * @param {'stt'|'llm_request'|'llm_response'|'tool_call'|'tool_result'|'tts'|'error'|'nav'} type
  * @param {object} data
  */
+// ── ship every entry to the proxy, which appends it to logs/session-<date>.jsonl ──────────────
+// Fire-and-forget: if the proxy is not there (e.g. a static build) nothing breaks and nothing is logged about it.
+const queue = [];
+let flushTimer = null;
+function flush(viaBeacon = false) {
+  flushTimer = null;
+  if (typeof window === 'undefined' || !queue.length) return;
+  const body = JSON.stringify(queue.splice(0, 100));
+  try {
+    if (viaBeacon && navigator.sendBeacon) navigator.sendBeacon('/api/log', new Blob([body], { type: 'application/json' }));
+    else fetch('/api/log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true }).catch(() => {});
+  } catch { /* ignore */ }
+  if (queue.length) flushTimer = setTimeout(() => flush(), 300);
+}
+function enqueue(entry) {
+  if (typeof window === 'undefined') return;
+  if (queue.length < 500) queue.push(entry);
+  if (!flushTimer) flushTimer = setTimeout(() => flush(), 800);
+}
+
 export function log(type, data) {
   const entry = {
     ts: new Date().toISOString(),
@@ -54,6 +74,7 @@ export function log(type, data) {
   const store = readStore();
   store.push(entry);
   writeStore(store);
+  enqueue(entry);
   // Always echo to console so devtools Network/Console tabs show it
   console.groupCollapsed(`%c[IRCTC LOG] ${type}`, 'color:#f97316;font-weight:bold', entry.ts);
   console.log(entry);
@@ -93,4 +114,26 @@ export const logger = {
 // Expose globally for easy console access
 if (typeof window !== 'undefined') {
   window.__irctcLog = logger;
+
+  // Things that go wrong without a handler, and the voice pipeline's own console diagnostics, are what is
+  // needed to explain "it did nothing" — record them too.
+  if (!window.__irctcLogHooked) {
+    window.__irctcLogHooked = true;
+    window.addEventListener('pagehide', () => flush(true));
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(true); });
+    window.addEventListener('error', (e) => log('js_error', { message: String(e.message || '').slice(0, 300), source: String(e.filename || '').split('/').pop(), line: e.lineno }));
+    window.addEventListener('unhandledrejection', (e) => log('js_error', { message: String(e.reason?.message || e.reason || '').slice(0, 300), kind: 'unhandledrejection' }));
+    const text = (args) => args.map((a) => (typeof a === 'string' ? a : (() => { try { return JSON.stringify(a); } catch { return String(a); } })())).join(' ').slice(0, 500);
+    const wrap = (level, keep) => {
+      const orig = console[level].bind(console);
+      console[level] = (...args) => {
+        orig(...args);
+        const t = text(args);
+        if (keep(t)) enqueue({ ts: new Date().toISOString(), session: getSessionId(), type: 'console', level, text: t });
+      };
+    };
+    wrap('warn', () => true);
+    wrap('error', (t) => !t.startsWith('Warning:')); // React dev warnings are noise
+    wrap('log', (t) => /^\[(STT|VoiceFlow)\]/.test(t) || (/^\[VAD\]/.test(t) && !t.startsWith('[VAD] avg')));
+  }
 }
