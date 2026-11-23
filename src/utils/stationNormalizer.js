@@ -123,3 +123,11 @@ export function normalizeStation(raw) {
   const key = raw.toLowerCase().trim();
   return ALIASES[key] || raw;
 }
+
+// Did the user's own words name this station (any spelling/script we know)?
+export function mentionsStation(text, canonicalName) {
+  const t = String(text || '').toLowerCase();
+  if (!t || !canonicalName) return false;
+  if (t.includes(String(canonicalName).toLowerCase())) return true;
+  return Object.entries(ALIASES).some(([alias, name]) => name === canonicalName && alias.length >= 3 && t.includes(alias));
+}

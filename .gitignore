@@ -3,3 +3,15 @@ dist/
 .env
 .env.local
 .DS_Store
+
+# Downloaded session logs hold names/numbers
+irctc-session-*.json
+
+# Local e-mail previews (MAIL_DRY_RUN=1)
+mail-outbox/
+
+logs/*.jsonl
+logs/*.log
+
+# Personal profile overrides (phone number etc.) — never committed
+src/config/*.local.json

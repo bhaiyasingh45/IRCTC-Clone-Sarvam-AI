@@ -1,0 +1,54 @@
+{
+  "_comment": "Which user-profile fields the assistant is shown on each screen, plus a screen-specific hint. {field} placeholders are filled from the profile. Edit this file to change what the assistant 'knows' where — no code change needed.",
+  "home": {
+    "fields": [
+      "homeTown",
+      "preferredClass"
+    ],
+    "hint": "\"my hometown\" / \"ghar\" / \"home\" means {homeTown}, but only for the city the user actually refers to it for — it is never the other end of the route. \"traveling to my hometown\" → destination {homeTown}, source UNKNOWN → ask \"Where will you be travelling from?\". \"from Delhi to my hometown on 1 January\" → search_trains(source \"Delhi\", destination \"{homeTown}\", date). If no class is mentioned use {preferredClass}."
+  },
+  "train_list": {
+    "fields": [
+      "homeTown",
+      "preferredClass"
+    ],
+    "hint": "\"my hometown\" means {homeTown} (one end of a route only). If the user does not name a class, assume {preferredClass}."
+  },
+  "train_detail": {
+    "fields": [
+      "preferredClass"
+    ],
+    "hint": ""
+  },
+  "passenger_form": {
+    "fields": [
+      "fullName",
+      "age",
+      "gender",
+      "berth",
+      "mobile"
+    ],
+    "hint": "When the user books for THEMSELF (\"for me\", \"myself\", \"mere liye\", \"book for me\") call add_self_as_passenger — do NOT ask for name/age/gender/berth, you already know them. For a friend/family member \"same as me\" / \"same details\" means the same age, gender and berth as the saved profile values above (the name is theirs). A saved mobile is used automatically; just confirm it by its last 4 digits. If the user states a new age/gender/berth/mobile for themself, it is saved for next time."
+  },
+  "review": {
+    "fields": [
+      "fullName",
+      "mobile"
+    ],
+    "hint": ""
+  },
+  "payment": {
+    "fields": [
+      "preferredPayment"
+    ],
+    "hint": "Offer the preferred payment method ({preferredPayment}) when asking whether to pay."
+  },
+  "my_bookings": {
+    "fields": [],
+    "hint": "To cancel a booked ticket use request_ticket_cancellation, then ASK \"Are you sure?\" and only after a clear yes call confirm_ticket_cancellation. If the user says no, call keep_ticket."
+  },
+  "success": {
+    "fields": [],
+    "hint": "The booking is complete. Offer a new search, or showing the user's bookings."
+  }
+}
